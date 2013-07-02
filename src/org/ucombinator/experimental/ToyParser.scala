@@ -7,8 +7,14 @@ object ToyParser extends RegexParsers {
   // TODO come up with a way to track line numbers
   def labelStatement: Parser[Statement] = "(label" ~> label <~ ")" ^^ { LabelStatement(1, _) }
   def gotoStatement: Parser[Statement] = "(goto" ~> label <~ ")" ^^ { GotoStatement(1, _) }
-  def assignStatement: Parser[Statement] = "(:=" ~> variable ~ expr <~ ")" ^^ { (result) => AssignmentStatement(1, result._1, result._2) }
-  def condStatement: Parser[Statement] = "(label" ~> label <~ ")" ^^ { LabelStatement(1, _) }
+  def assignStatement: Parser[Statement] = "(:=" ~> variable ~ expr <~ ")" map {
+    case variable ~ expression => AssignmentStatement(1, variable, expression)
+    case _ => scala.sys.error("could not match assignment statement")
+  }
+  def condStatement: Parser[Statement] = "(if" ~> expr ~ label <~ ")" map {
+    case expression ~ label => IfStatement(1, expression, label)
+    case _ => scala.sys.error("could not match if statement")
+  }
 
   def label: Parser[Label] = "[a-z]*".r ^^ { new Label(_) }
   def variable: Parser[Variable] = "[a-z]*".r ^^ { new Variable(_) }
