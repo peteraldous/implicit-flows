@@ -1,6 +1,6 @@
 package org.ucombinator.experimental
 
-class Label(l: String)
+case class Label(l: String)
 
 abstract class Expression
 case class Addition(lhs: Expression, rhs: Expression) extends Expression
