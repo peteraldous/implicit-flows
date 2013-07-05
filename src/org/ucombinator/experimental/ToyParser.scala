@@ -31,11 +31,27 @@ object ToyParser extends RegexParsers {
     case failure: NoSuccess => scala.sys.error(failure.msg)
   }
 
+  def applyStmts(input: String, ln: Int): List[Statement] = {
+    def innerApplyStmts(input: Input, ln: Int): List[Statement] = {
+      if (input.atEnd) List.empty else {
+        parse(stmt(ln), input) match {
+          case Success(result, remainder) => result :: innerApplyStmts(remainder, ln + 1)
+          case failure: NoSuccess => scala.sys.error(failure.msg)
+        }
+      }
+    }
+    // TODO duplicating this code is ugly but I don't want to deal with type polymorphism at the moment
+    parse(stmt(ln), input) match {
+      case Success(result, remainder) => result :: innerApplyStmts(remainder, ln + 1)
+      case failure: NoSuccess => scala.sys.error(failure.msg)
+    }
+  }
+
   def applyExpr(input: String): Expression = parseAll(expr, input) match {
     case Success(result, _) => result
     case failure: NoSuccess => scala.sys.error(failure.msg)
   }
-  
+
   def applyLabel(input: String): Label = parseAll(label, input) match {
     case Success(result, _) => result
     case failure: NoSuccess => scala.sys.error(failure.msg)
