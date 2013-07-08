@@ -16,15 +16,25 @@ object Analyzer extends App {
     val program = new Program(List.empty)
     val firstState = new State(program)(program.statements, Map(Pair(Variable("x"), Value(2))), Map(Pair(Variable("x"), true)), Set.empty)
 
-    def explore(state: State): Map[Variable, Boolean] = {
-      if (state.isEnd) state.taintedVars else explore(state.next)
+    def explore(state: State, successorGraph: Map[State, State]): Map[State, State] = {
+      if (state.isEnd) successorGraph else explore(state.next, successorGraph + Pair(state, state.next))
+    }
+
+    def printGraph(graph: Map[State, State]): Unit = {
+      def innerPrintGraph(currentState: State): Unit = {
+        if (!currentState.isEnd) {
+          println(currentState + " -> " + currentState.next)
+          innerPrintGraph(currentState.next)
+        }
+      }
+      innerPrintGraph(firstState)
     }
 
     // TODO why is the map of tainted variables empty?
-    explore(firstState)
+    printGraph(explore(firstState, Map.empty))
   }
-  
-  println(analyze)
+
+  analyze
 
   class State(program: Program)(s: List[Statement], p: Map[Variable, Value], t: Map[Variable, Boolean], ct: Set[List[Statement]]) {
     val statements = s
