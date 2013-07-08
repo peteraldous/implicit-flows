@@ -1,17 +1,30 @@
 package org.ucombinator.experimental
 
-object Analyzer {
+import java.io.BufferedReader
+import java.io.InputStreamReader
+
+object Analyzer extends App {
 
   def analyze: Unit = {
+    val sourceCodeReader = new BufferedReader(new InputStreamReader(System.in))
+    val sourceCodeBuilder = new StringBuilder()
+    var line = sourceCodeReader.readLine()
+    while (line != null) {
+      sourceCodeBuilder.append(line)
+      line = sourceCodeReader.readLine()
+    }
     val program = new Program(List.empty)
-    val firstState = new State(program)(program.statements, Map.empty, Map.empty, Set.empty)
+    val firstState = new State(program)(program.statements, Map(Pair(Variable("x"), Value(2))), Map(Pair(Variable("x"), true)), Set.empty)
 
     def explore(state: State): Map[Variable, Boolean] = {
       if (state.isEnd) state.taintedVars else explore(state.next)
     }
 
+    // TODO why is the map of tainted variables empty?
     explore(firstState)
   }
+  
+  println(analyze)
 
   class State(program: Program)(s: List[Statement], p: Map[Variable, Value], t: Map[Variable, Boolean], ct: Set[List[Statement]]) {
     val statements = s
