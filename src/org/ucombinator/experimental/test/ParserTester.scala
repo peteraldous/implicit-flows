@@ -14,19 +14,9 @@ import org.ucombinator.experimental.Comparison
 import org.ucombinator.experimental.Multiplication
 import org.ucombinator.experimental.AssignmentStatement
 
-object ParserTester extends App {
-  var passed = 0
-  var run = 0
-  def test(result: Boolean, tag: String): Unit = {
-    run += 1
-    if (result) {
-      passed += 1
-    } else {
-      println("TEST FAILED: " + tag)
-    }
-  }
+object ParserTester extends Tester {
 
-  def runTests: Unit = {
+  override def tests: Unit = {
     test(ToyParser.applyExpr("2") == Value(2), "basic value")
     test(ToyParser.applyExpr("29") == Value(29), "two-digit value")
     test(ToyParser.applyLabel("_l") == Label("_l"), "basic label")
@@ -41,11 +31,6 @@ object ParserTester extends App {
     test(ToyParser.applyStmt("(:= v 1)", 2) == AssignmentStatement(2, Variable("v"), Value(1)), "basic assignment")
     test(ToyParser.applyStmt("(if 1 _l)", 169) == IfStatement(169, Value(1), Label("_l")), "basic conditional")
     test(ToyParser.applyStmt("(:= y (+ 1 2))", 3) == AssignmentStatement(3, Variable("y"), Addition(Value(1), Value(2))), "nested addition in assignment")
-
     test(ToyParser.applyStmts("(label _l)(goto _l)", 3) == List(LabelStatement(3, Label("_l")), GotoStatement(4, Label("_l"))), "two statements")
-
-    println(passed + " of " + run + " tests passed")
   }
-
-  runTests
 }
