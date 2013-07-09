@@ -18,29 +18,29 @@ object Analyzer extends App {
         false
       }
     }
-//    while (readALine(sourceCodeReader, sourceCodeBuilder)) {}
+    while (readALine(sourceCodeReader, sourceCodeBuilder)) {}
 
-    val sourceCode = "(:= y x)"
-//    val sourceCode = sourceCodeBuilder.mkString
+    val sourceCode = sourceCodeBuilder.mkString
     val program = new Program(ToyParser.applyStmts(sourceCode, 0))
 
+    // I should probably make this configurable, but x has the value of 2 and is tainted
     val firstState = new State(program)(program.statements, Map(Pair(Variable("x"), Value(2))), Map(Pair(Variable("x"), true)), Set.empty)
-    
+
     def explore(state: State, successorGraph: Map[State, State]): Map[State, State] = {
       if (state.isEnd) successorGraph else explore(state.next, successorGraph + Pair(state, state.next))
     }
 
-    def printGraph(graph: Map[State, State]): Unit = {
-      def innerPrintGraph(currentState: State): Unit = {
-        if (!currentState.isEnd) {
-          println(currentState + " -> " + currentState.next)
-          innerPrintGraph(currentState.next)
-        }
-      }
-      innerPrintGraph(firstState)
-    }
+    printGraph(firstState, explore(firstState, Map.empty))
+  }
 
-    printGraph(explore(firstState, Map.empty))
+  def printGraph(initial: State, graph: Map[State, State]): Unit = {
+    def innerPrintGraph(currentState: State): Unit = {
+      if (!currentState.isEnd) {
+        println(currentState + " -> " + currentState.next)
+        innerPrintGraph(currentState.next)
+      }
+    }
+    innerPrintGraph(initial)
   }
 
   analyze
@@ -50,7 +50,7 @@ object Analyzer extends App {
     val env = p
     val taintedVars = t
     val contextTaint = ct
-    
+
     override def toString = "(" + statements + ", " + env + ", " + taintedVars + ", " + contextTaint + ")"
 
     def next: State = {
@@ -144,7 +144,6 @@ object Analyzer extends App {
       innerPath(statements, Nil)
     }
 
-    // TODO find a way to get a list of statements into this object
     val statements = s
     val tables = generateTables(statements)
     val lookup = tables._1
