@@ -6,16 +6,26 @@ import java.io.InputStreamReader
 object Analyzer extends App {
 
   def analyze: Unit = {
+
     val sourceCodeReader = new BufferedReader(new InputStreamReader(System.in))
     val sourceCodeBuilder = new StringBuilder()
-    var line = sourceCodeReader.readLine()
-    while (line != null) {
-      sourceCodeBuilder.append(line)
-      line = sourceCodeReader.readLine()
+    def readALine(reader: BufferedReader, builder: StringBuilder): Boolean = {
+      val line = reader.readLine()
+      if (line != null) {
+        builder.append(line)
+        true
+      } else {
+        false
+      }
     }
-    val program = new Program(List.empty)
-    val firstState = new State(program)(program.statements, Map(Pair(Variable("x"), Value(2))), Map(Pair(Variable("x"), true)), Set.empty)
+//    while (readALine(sourceCodeReader, sourceCodeBuilder)) {}
 
+    val sourceCode = "(:= y x)"
+//    val sourceCode = sourceCodeBuilder.mkString
+    val program = new Program(ToyParser.applyStmts(sourceCode, 0))
+
+    val firstState = new State(program)(program.statements, Map(Pair(Variable("x"), Value(2))), Map(Pair(Variable("x"), true)), Set.empty)
+    
     def explore(state: State, successorGraph: Map[State, State]): Map[State, State] = {
       if (state.isEnd) successorGraph else explore(state.next, successorGraph + Pair(state, state.next))
     }
@@ -30,7 +40,6 @@ object Analyzer extends App {
       innerPrintGraph(firstState)
     }
 
-    // TODO why is the map of tainted variables empty?
     printGraph(explore(firstState, Map.empty))
   }
 
@@ -41,17 +50,19 @@ object Analyzer extends App {
     val env = p
     val taintedVars = t
     val contextTaint = ct
+    
+    override def toString = "(" + statements + ", " + env + ", " + taintedVars + ", " + contextTaint + ")"
 
     def next: State = {
       val ctPrime = ct.filter((source) => program.infl(source).contains(s))
       s.head match {
-        case LabelStatement(id, l) => (s.tail, p, t, ctPrime)
-        case GotoStatement(id, l) => (program.lookup(l), p, t, ctPrime)
+        case LabelStatement(id, l) => new State(program)(s.tail, p, t, ctPrime)
+        case GotoStatement(id, l) => new State(program)(program.lookup(l), p, t, ctPrime)
 
         case AssignmentStatement(id, v, e) => {
           val pPrime = p + Pair(v, program.eval(e, p))
           val tPrime = t + Pair(v, program.tainted(e, t) || !(ct.isEmpty))
-          (s.tail, pPrime, tPrime, ctPrime)
+          new State(program)(s.tail, pPrime, tPrime, ctPrime)
         }
 
         case IfStatement(id, e, l) => {
@@ -65,12 +76,11 @@ object Analyzer extends App {
           } else {
             ctPrime
           }
-          (sPrime, p, t, ctPrimePrime)
+          new State(program)(sPrime, p, t, ctPrimePrime)
         }
 
         case _ => throw new IllegalStateException("next: unknown statement: " + s.head)
       }
-      this
     }
 
     def isEnd: Boolean = s.isEmpty
