@@ -113,7 +113,7 @@ class Program(s: List[Statement]) {
     }
     innerPath(statements, Nil)
   }
-  
+
   def firstState: State = {
     // I should probably make this configurable, but x has the value of 2 and is tainted
     new State(this)(statements, Map(Pair(Variable("x"), Value(2))), Map(Pair(Variable("x"), true)), Set.empty)
@@ -123,6 +123,17 @@ class Program(s: List[Statement]) {
   val tables = generateTables(statements)
   val lookup = tables._1
   val conditionals = tables._2
+  val allStatementLists = {
+    def allSuffixes(suffixes: Set[List[Statement]], lst: List[Statement]): Set[List[Statement]] = {
+      val withThis = suffixes | Set(lst)
+      if (lst.isEmpty) {
+        withThis
+      } else {
+        allSuffixes(withThis, lst.tail)
+      }
+    }
+    allSuffixes(Set.empty, statements)
+  }
 
   private def generateTables(statements: List[Statement]): Pair[Map[Label, List[Statement]], Map[Int, List[Statement]]] = {
     def innerGenerateTables(statements: List[Statement], labelsSoFar: Map[Label, List[Statement]], conditionalsSoFar: Map[Int, List[Statement]]): Pair[Map[Label, List[Statement]], Map[Int, List[Statement]]] = {
@@ -146,7 +157,7 @@ class Program(s: List[Statement]) {
   }
 
   def hcd(sources: Set[List[Statement]]): List[Statement] = {
-    val commonDescendants = (sources map descendants).foldLeft(descendants(firstState.statements))((set1, set2) => set1 & set2)
+    val commonDescendants = (sources map descendants).foldLeft(allStatementLists)((set1, set2) => set1 & set2)
     def firstSuffixMatch(lst: List[Statement]): Option[List[Statement]] = {
       if (commonDescendants.contains(lst)) {
         Some(lst)
