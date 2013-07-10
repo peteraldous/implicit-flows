@@ -10,12 +10,13 @@ import org.ucombinator.experimental.Analyzer
 object ConcreteTester extends Tester {
   override def tests: Unit = {
     simpleTaint
+    arithmetic
     implicitFlow
   }
   
   private def undefOrFalse[A](key: A, map: Map[A, Boolean]): Boolean = {
     if (map isDefinedAt key) {
-      map(key)
+      !map(key)
     } else {
       true
     }
@@ -33,6 +34,18 @@ object ConcreteTester extends Tester {
     test(undefOrFalse(Variable("z"), taintedVars), "simpleTaint: non-tainted variable is not tainted")
     test(undefOrFalse(Variable("a"), taintedVars), "simpleTaint: non-existent variable is not tainted")
     test(finalState.env(Variable("x")) == finalState.env(Variable("y")), "simpleTaint: x == y")
+  }
+  
+  private def arithmetic: Unit = {
+    val firstState = Analyzer.setup("(:= add (+ 1 2))(:= mult (* 4 6))(:= compeq (= 5 5))(:= compneq (= 8 3))")
+    val stateGraph = Analyzer.explore(firstState, Map.empty)
+    val finalState = Analyzer.finalState(firstState, stateGraph)
+    val env = finalState.env
+
+    test(env.isDefinedAt(Variable("add")) && env(Variable("add")) == Value(3), "arithmetic: addition")
+    test(env.isDefinedAt(Variable("mult")) && env(Variable("mult")) == Value(24), "arithmetic: multiplication")
+    test(env.isDefinedAt(Variable("compeq")) && env(Variable("compeq")) == Value(1), "arithmetic: comparison (equal)")
+    test(env.isDefinedAt(Variable("compneq")) && env(Variable("compneq")) == Value(0), "arithmetic: comparison (not equal)")
   }
   
   private def implicitFlow: Unit = {
