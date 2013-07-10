@@ -4,7 +4,7 @@ import java.io.BufferedReader
 import java.io.InputStreamReader
 
 object Analyzer extends App {
-  
+
   def setup(sourceCode: String): State = {
     val program = new Program(ToyParser.applyStmts(sourceCode, 0))
 
@@ -18,7 +18,10 @@ object Analyzer extends App {
   }
 
   def explore(state: State, successorGraph: Map[State, State]): Map[State, State] = {
-    if (state.isEnd) successorGraph else explore(state.next, successorGraph + Pair(state, state.next))
+    if (state.isEnd) successorGraph else {
+      val next = state.next
+      explore(next, successorGraph + Pair(state, next))
+    }
   }
 
   def printGraph(initial: State, graph: Map[State, State]): Unit = {
@@ -30,7 +33,7 @@ object Analyzer extends App {
     }
     innerPrintGraph(initial)
   }
-  
+
   def finalState(initial: State, graph: Map[State, State]): State = {
     if (graph isDefinedAt initial) {
       finalState(graph(initial), graph)
@@ -142,15 +145,30 @@ class Program(s: List[Statement]) {
 
   def hcd(sources: Set[List[Statement]]): List[Statement] = {
     val commonDescendants = (sources map descendants).foldLeft(sources.empty)((set1, set2) => set1 & set2)
-    def firstSuffixMatch(lst: List[Statement]): List[Statement] = {
+    def firstSuffixMatch(lst: List[Statement]): Option[List[Statement]] = {
       if (commonDescendants.contains(lst)) {
-        lst
+        Some(lst)
       } else {
-        firstSuffixMatch(lst.tail)
+        if (lst.isEmpty) {
+          None
+        } else {
+          lst.head match {
+            case GotoStatement(ln, l) => firstSuffixMatch(lookup(l))
+            case IfStatement(ln, cond, l) => {
+              val fallThrough = firstSuffixMatch(lst.tail)
+              if (fallThrough.isEmpty) {
+                firstSuffixMatch(lookup(l))
+              } else {
+                fallThrough
+              }
+            }
+            case _ => firstSuffixMatch(lst.tail)
+          }
+        }
       }
     }
-    // Find the first statement list in some element of sources that matches and return it
-    firstSuffixMatch(sources.head)
+    // get throws an error if there's nothing
+    firstSuffixMatch(sources.head).get
   }
 
   def influence(s: List[Statement]): Set[List[Statement]] = {
@@ -185,32 +203,36 @@ class State(program: Program)(s: List[Statement], p: Map[Variable, Value], t: Ma
   override def toString = "(" + statements + ", " + env + ", " + taintedVars + ", " + contextTaint + ")"
 
   def next: State = {
-    val ctPrime = ct.filter((source) => program.influence(source).contains(s))
-    s.head match {
-      case LabelStatement(id, l) => new State(program)(s.tail, p, t, ctPrime)
-      case GotoStatement(id, l) => new State(program)(program.lookup(l), p, t, ctPrime)
+    if (s.isEmpty) {
+      scala.sys.error("next: should be unreachable")
+    } else {
+      val ctPrime = ct.filter((source) => program.influence(source).contains(s))
+      s.head match {
+        case LabelStatement(id, l) => new State(program)(s.tail, p, t, ctPrime)
+        case GotoStatement(id, l) => new State(program)(program.lookup(l), p, t, ctPrime)
 
-      case AssignmentStatement(id, v, e) => {
-        val pPrime = p + Pair(v, program.eval(e, p))
-        val tPrime = t + Pair(v, program.tainted(e, t) || !(ct.isEmpty))
-        new State(program)(s.tail, pPrime, tPrime, ctPrime)
-      }
-
-      case IfStatement(id, e, l) => {
-        val sPrime = if (program.eval(e, p) == Value(0)) {
-          s.tail
-        } else {
-          program.lookup(l)
+        case AssignmentStatement(id, v, e) => {
+          val pPrime = p + Pair(v, program.eval(e, p))
+          val tPrime = t + Pair(v, program.tainted(e, t) || !(ct.isEmpty))
+          new State(program)(s.tail, pPrime, tPrime, ctPrime)
         }
-        val ctPrimePrime = if (program.tainted(e, t)) {
-          ctPrime + program.conditionals(id)
-        } else {
-          ctPrime
-        }
-        new State(program)(sPrime, p, t, ctPrimePrime)
-      }
 
-      case _ => throw new IllegalStateException("next: unknown statement: " + s.head)
+        case IfStatement(id, e, l) => {
+          val sPrime = if (program.eval(e, p) == Value(0)) {
+            s.tail
+          } else {
+            program.lookup(l)
+          }
+          val ctPrimePrime = if (program.tainted(e, t)) {
+            ctPrime + program.conditionals(id)
+          } else {
+            ctPrime
+          }
+          new State(program)(sPrime, p, t, ctPrimePrime)
+        }
+
+        case _ => throw new IllegalStateException("next: unknown statement: " + s.head)
+      }
     }
   }
 
