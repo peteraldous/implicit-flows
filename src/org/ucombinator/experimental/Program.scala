@@ -6,10 +6,7 @@ import java.io.InputStreamReader
 object Analyzer extends App {
 
   def setup(sourceCode: String): State = {
-    val program = new Program(ToyParser.applyStmts(sourceCode, 0))
-
-    // I should probably make this configurable, but x has the value of 2 and is tainted
-    new State(program)(program.statements, Map(Pair(Variable("x"), Value(2))), Map(Pair(Variable("x"), true)), Set.empty)
+    new Program(ToyParser.applyStmts(sourceCode, 0)).firstState
   }
 
   def analyze(sourceCode: String): Unit = {
@@ -116,6 +113,11 @@ class Program(s: List[Statement]) {
     }
     innerPath(statements, Nil)
   }
+  
+  def firstState: State = {
+    // I should probably make this configurable, but x has the value of 2 and is tainted
+    new State(this)(statements, Map(Pair(Variable("x"), Value(2))), Map(Pair(Variable("x"), true)), Set.empty)
+  }
 
   val statements = s
   val tables = generateTables(statements)
@@ -144,7 +146,7 @@ class Program(s: List[Statement]) {
   }
 
   def hcd(sources: Set[List[Statement]]): List[Statement] = {
-    val commonDescendants = (sources map descendants).foldLeft(sources.empty)((set1, set2) => set1 & set2)
+    val commonDescendants = (sources map descendants).foldLeft(descendants(firstState.statements))((set1, set2) => set1 & set2)
     def firstSuffixMatch(lst: List[Statement]): Option[List[Statement]] = {
       if (commonDescendants.contains(lst)) {
         Some(lst)
