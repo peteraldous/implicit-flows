@@ -24,7 +24,7 @@ case class Variable(v: String) extends Expression {
   override def abstractMe: AbstractVariable = AbstractVariable(v)
 }
 case class Value(v: Int) extends Expression {
-  override def abstractMe: AbstractValue = if (v < 0) n else { if (v > 0) p else z}
+  override def abstractMe: AbstractValue = if (v < 0) n else { if (v > 0) p else z }
 }
 
 abstract class AbstractExpression
@@ -32,46 +32,21 @@ case class AbstractAddition(lhs: AbstractExpression, rhs: AbstractExpression) ex
 case class AbstractMultiplication(lhs: AbstractExpression, rhs: AbstractExpression) extends AbstractExpression
 case class AbstractComparison(lhs: AbstractExpression, rhs: AbstractExpression) extends AbstractExpression
 case class AbstractVariable(v: String) extends AbstractExpression
-abstract class AbstractValue() extends AbstractExpression {
-  def positive: Boolean
-  def zero: Boolean
-  def negative: Boolean
-}
+abstract class AbstractValue() extends AbstractExpression
 
-case object nzp extends AbstractValue() {
-  override def positive: Boolean = true
-  override def zero: Boolean = true
-  override def negative: Boolean = true
-}
-case object nz extends AbstractValue() {
-  override def positive: Boolean = false
-  override def zero: Boolean = true
-  override def negative: Boolean = true
-}
-case object np extends AbstractValue() {
-  override def positive: Boolean = true
-  override def zero: Boolean = false
-  override def negative: Boolean = true
-}
-case object zp extends AbstractValue() {
-  override def positive: Boolean = true
-  override def zero: Boolean = true
-  override def negative: Boolean = false
-}
-case object n extends AbstractValue() {
-  override def positive: Boolean = false
-  override def zero: Boolean = false
-  override def negative: Boolean = true
-}
-case object z extends AbstractValue() {
-  override def positive: Boolean = false
-  override def zero: Boolean = true
-  override def negative: Boolean = false
-}
-case object p extends AbstractValue() {
-  override def positive: Boolean = true
-  override def zero: Boolean = false
-  override def negative: Boolean = false
+case object nzp extends AbstractValue()
+case object nz extends AbstractValue()
+case object np extends AbstractValue()
+case object zp extends AbstractValue()
+case object n extends AbstractValue()
+case object z extends AbstractValue()
+case object p extends AbstractValue()
+
+object AbstractValues {
+  val positive = Set[AbstractValue](nzp, np, zp, p)
+  val zero = Set[AbstractValue](nzp, nz, zp, z)
+  val negative = Set[AbstractValue](nzp, nz, np, n)
+  val all = positive | zero | negative
 }
 
 abstract class Statement(ln: Int) {

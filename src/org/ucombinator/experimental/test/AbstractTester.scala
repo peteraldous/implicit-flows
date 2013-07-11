@@ -5,6 +5,10 @@ import org.ucombinator.experimental.Program
 import org.ucombinator.experimental.ToyParser
 import org.ucombinator.experimental.Value
 import org.ucombinator.experimental.Variable
+import org.ucombinator.experimental.AbstractValues
+import org.ucombinator.experimental.AbstractValue
+import org.ucombinator.experimental.AbstractProgram
+import scala.util.Try
 //import org.ucombinator.experimental.AbstractAnalyzer
 
 object AbstractTester extends Tester {
@@ -22,9 +26,23 @@ object AbstractTester extends Tester {
       true
     }
   }
+  
+  private def testDefined(fun: (AbstractValue, AbstractValue) => AbstractValue)(lhs: AbstractValue, rhs: AbstractValue): Boolean = {
+    Try(fun(lhs, rhs)).isSuccess
+  }
 
   private def eval: Unit = {
-
+    val program = new AbstractProgram(List.empty)
+    val testAdditionDefined = testDefined(program.abstractAdd)_
+    val testMultiplicationDefined = testDefined(program.abstractMultiply)_
+    val testComparisonDefined = testDefined(program.abstractCompare)_
+    for (lhs <- AbstractValues.all) {
+      for (rhs <- AbstractValues.all) {
+//        test(testAdditionDefined(lhs, rhs), "eval coverage: (+ " + lhs + " " + rhs + ")")
+        test(testMultiplicationDefined(lhs, rhs), "eval coverage: (* " + lhs + " " + rhs + ")")
+//        test(testComparisonDefined(lhs, rhs), "eval coverage: (= " + lhs + " " + rhs + ")")
+      }
+    }
   }
 
   /*

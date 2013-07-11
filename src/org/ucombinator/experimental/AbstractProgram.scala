@@ -19,50 +19,63 @@ class AbstractProgram(s: List[AbstractStatement]) {
     case AbstractIfStatement(id, c, l) :: rest => Set(rest, lookup(l))
     case _ => throw new IllegalStateException("successors: Could not match statement list: " + statements)
   }
-  
+
+  // TODO double-check that all of these abstract arithmetic functions are correct
   def abstractAdd(lhs: AbstractValue, rhs: AbstractValue): AbstractValue = {
     (lhs, rhs) match {
       // nzp is top
-      case (`nzp`, _) => nzp
-      case (_, `nzp`) => nzp
+      case (`nzp`, _) => nzp							// 7 cases - 7 total
+      case (_, `nzp`) => nzp							// 6 cases - 13 total
       // if they match (assuming no overflow), the sign remains the same
-      case (s, `s`) => s
+      case (copy, paste) if (copy == paste) => copy		// 6 cases - 19 total
       // zero doesn't change the case
-      case (`z`, s) => s
-      case (s, `z`) => s
+      case (`z`, s) => s								// 5 cases - 24 total
+      case (s, `z`) => s								// 5 cases - 29 total
       // this catches all cases that have n in one and p in the other
-      case (lhs, rhs) if ((rhs.positive && lhs.negative) || (rhs.negative && lhs.positive)) => nzp
-      // TODO cases that involve at least one of {nz, zp, np} and possible one of {n, z, p}
+      case (lhs, rhs) if ((AbstractValues.positive.contains(rhs) && AbstractValues.negative.contains(lhs)) ||
+        (AbstractValues.negative.contains(rhs) && AbstractValues.positive.contains(lhs))) => nzp
+        												// 16 cases - 45 total
+      case (`nz`, `n`) => nz							// 46 total
+      case (`n`, `nz`) => nz							// 47 total
+      case (`zp`, `p`) => zp							// 48 total
+      case (`p`, `zp`) => zp							// 49 total
     }
   }
-  
+
   def abstractMultiply(lhs: AbstractValue, rhs: AbstractValue): AbstractValue = {
     (lhs, rhs) match {
-      case (`z`, _) => z
-      case (_, `z`) => z
-      case (`p`, s) => s
-      case (s, `p`) => s
-      case (`nzp`, s) => nzp
-      case (s, `nzp`) => nzp
-      case (`n`, `n`) => p
-      case (`n`, `nz`) => zp
-      case (`nz`, `n`) => zp
-      case (`n`, `zp`) => nz
-      case (`zp`, `n`) => nz
-      case (`n`, `np`) => np
-      case (`np`, `n`) => np
-      case (`nz`, `nz`) => zp
-      case (`zp`, `zp`) => nz
-      case (`np`, `np`) => np
-      // TODO cases with nz, np, and zp
+      case (`z`, _) => z		// 7 cases  - 7 total
+      case (_, `z`) => z		// 6 cases  - 13 total
+      case (`p`, s) => s		// 6 cases  - 19 total
+      case (s, `p`) => s		// 5 cases  - 24 total
+      case (`nzp`, s) => nzp	// 5 cases  - 29 total
+      case (s, `nzp`) => nzp	// 4 cases  - 33 total
+      case (`n`, `n`) => p		// 34 total
+      case (`n`, `nz`) => zp	// 35 total
+      case (`nz`, `n`) => zp	// 36 total
+      case (`n`, `zp`) => nz	// 37 total
+      case (`zp`, `n`) => nz	// 38 total
+      case (`n`, `np`) => np	// 39 total
+      case (`np`, `n`) => np	// 40 total
+      case (`nz`, `nz`) => zp	// 41 total
+      case (`zp`, `zp`) => zp	// 42 total
+      case (`np`, `np`) => np	// 43 total
+      case (`zp`, `np`) => nzp	// 44 total
+      case (`np`, `zp`) => nzp	// 45 total
+      case (`zp`, `nz`) => nz	// 46 total
+      case (`nz`, `zp`) => nz	// 47 total
+      case (`nz`, `np`) => nzp	// 48 total
+      case (`np`, `nz`) => nzp	// 49 total
     }
   }
-  
+
   def abstractCompare(lhs: AbstractValue, rhs: AbstractValue): AbstractValue = {
     (lhs, rhs) match {
       // this is the only case that must be true (positive)
       case (`z`, `z`) => p
-      case (lhs, rhs) => if ((lhs.positive && rhs.positive) || (lhs.zero && rhs.zero) || (lhs.negative && rhs.negative)) zp else z
+      case (lhs, rhs) => if ((AbstractValues.positive.contains(lhs) && AbstractValues.positive.contains(rhs)) ||
+        (AbstractValues.zero.contains(lhs) && AbstractValues.zero.contains(rhs)) ||
+        (AbstractValues.negative.contains(lhs) && AbstractValues.negative.contains(rhs))) zp else z
     }
   }
 
