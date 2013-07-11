@@ -20,7 +20,6 @@ class AbstractProgram(s: List[AbstractStatement]) {
     case _ => throw new IllegalStateException("successors: Could not match statement list: " + statements)
   }
 
-  // TODO double-check that all of these abstract arithmetic functions are correct
   def abstractAdd(lhs: AbstractValue, rhs: AbstractValue): AbstractValue = {
     (lhs, rhs) match {
       // nzp is top
