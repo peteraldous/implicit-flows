@@ -38,9 +38,9 @@ object AbstractTester extends Tester {
     val testComparisonDefined = testDefined(program.abstractCompare)_
     for (lhs <- AbstractValues.all) {
       for (rhs <- AbstractValues.all) {
-//        test(testAdditionDefined(lhs, rhs), "eval coverage: (+ " + lhs + " " + rhs + ")")
+        test(testAdditionDefined(lhs, rhs), "eval coverage: (+ " + lhs + " " + rhs + ")")
         test(testMultiplicationDefined(lhs, rhs), "eval coverage: (* " + lhs + " " + rhs + ")")
-//        test(testComparisonDefined(lhs, rhs), "eval coverage: (= " + lhs + " " + rhs + ")")
+        test(testComparisonDefined(lhs, rhs), "eval coverage: (= " + lhs + " " + rhs + ")")
       }
     }
   }
