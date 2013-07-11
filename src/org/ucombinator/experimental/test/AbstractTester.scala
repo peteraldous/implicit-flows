@@ -1,19 +1,20 @@
 package org.ucombinator.experimental.test
 
-import org.ucombinator.experimental.ConcreteState
+import org.ucombinator.experimental.AbstractState
 import org.ucombinator.experimental.Program
 import org.ucombinator.experimental.ToyParser
 import org.ucombinator.experimental.Value
 import org.ucombinator.experimental.Variable
-import org.ucombinator.experimental.ConcreteAnalyzer
+//import org.ucombinator.experimental.AbstractAnalyzer
 
-object ConcreteTester extends Tester {
+object AbstractTester extends Tester {
   override def tests: Unit = {
-    simpleTaint
-    arithmetic
-    implicitFlow
+    //    simpleTaint
+    //    arithmetic
+    //    implicitFlow
+    eval
   }
-  
+
   private def undefOrFalse[A](key: A, map: Map[A, Boolean]): Boolean = {
     if (map isDefinedAt key) {
       !map(key)
@@ -21,7 +22,12 @@ object ConcreteTester extends Tester {
       true
     }
   }
-  
+
+  private def eval: Unit = {
+
+  }
+
+  /*
   private def simpleTaint: Unit = {
     val firstState = ConcreteAnalyzer.setup("(:= y x)(:= z 3)")
     val stateGraph = ConcreteAnalyzer.explore(firstState, Map.empty)
@@ -59,4 +65,5 @@ object ConcreteTester extends Tester {
     test(!taintedVars(Variable("y")), "simpleTaint: y is not tainted (strong update)")
     test(taintedVars(Variable("z")), "simpleTaint: z is tainted (implicit flow)")
   }
+  * */
 }

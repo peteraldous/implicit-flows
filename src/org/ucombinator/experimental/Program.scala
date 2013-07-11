@@ -1,61 +1,5 @@
 package org.ucombinator.experimental
 
-import java.io.BufferedReader
-import java.io.InputStreamReader
-
-object Analyzer extends App {
-
-  def setup(sourceCode: String): State = {
-    new Program(ToyParser.applyStmts(sourceCode, 0)).firstState
-  }
-
-  def analyze(sourceCode: String): Unit = {
-    val firstState = setup(sourceCode)
-    printGraph(firstState, explore(firstState, Map.empty))
-  }
-
-  def explore(state: State, successorGraph: Map[State, State]): Map[State, State] = {
-    if (state.isEnd) successorGraph else {
-      val next = state.next
-      explore(next, successorGraph + Pair(state, next))
-    }
-  }
-
-  def printGraph(initial: State, graph: Map[State, State]): Unit = {
-    def innerPrintGraph(currentState: State): Unit = {
-      if (!currentState.isEnd) {
-        println(currentState + " -> " + currentState.next)
-        innerPrintGraph(currentState.next)
-      }
-    }
-    innerPrintGraph(initial)
-  }
-
-  def finalState(initial: State, graph: Map[State, State]): State = {
-    if (graph isDefinedAt initial) {
-      finalState(graph(initial), graph)
-    } else {
-      initial
-    }
-  }
-
-  val sourceCodeReader = new BufferedReader(new InputStreamReader(System.in))
-  val sourceCodeBuilder = new StringBuilder()
-  def readALine(reader: BufferedReader, builder: StringBuilder): Boolean = {
-    val line = reader.readLine()
-    if (line != null) {
-      builder.append(line)
-      true
-    } else {
-      false
-    }
-  }
-  while (readALine(sourceCodeReader, sourceCodeBuilder)) {}
-
-  analyze(sourceCodeBuilder.mkString)
-
-}
-
 class Program(s: List[Statement]) {
 
   def tainted(e: Expression, t: Map[Variable, Boolean]): Boolean = e match {
@@ -114,9 +58,9 @@ class Program(s: List[Statement]) {
     innerPath(statements, Nil)
   }
 
-  def firstState: State = {
+  def firstState: ConcreteState = {
     // I should probably make this configurable, but x has the value of 2 and is tainted
-    new State(this)(statements, Map(Pair(Variable("x"), Value(2))), Map(Pair(Variable("x"), true)), Set.empty)
+    new ConcreteState(this)(statements, Map(Pair(Variable("x"), Value(2))), Map(Pair(Variable("x"), true)), Set.empty)
   }
 
   val statements = s
@@ -205,49 +149,4 @@ class Program(s: List[Statement]) {
       case _ => Set.empty
     }
   }
-}
-
-class State(program: Program)(s: List[Statement], p: Map[Variable, Value], t: Map[Variable, Boolean], ct: Set[List[Statement]]) {
-  val statements = s
-  val env = p
-  val taintedVars = t
-  val contextTaint = ct
-
-  override def toString = "(" + statements + ", " + env + ", " + taintedVars + ", " + contextTaint + ")"
-
-  def next: State = {
-    if (s.isEmpty) {
-      scala.sys.error("next: should be unreachable")
-    } else {
-      val ctPrime = ct.filter((source) => program.influence(source).contains(s))
-      s.head match {
-        case LabelStatement(id, l) => new State(program)(s.tail, p, t, ctPrime)
-        case GotoStatement(id, l) => new State(program)(program.lookup(l), p, t, ctPrime)
-
-        case AssignmentStatement(id, v, e) => {
-          val pPrime = p + Pair(v, program.eval(e, p))
-          val tPrime = t + Pair(v, program.tainted(e, t) || !(ct.isEmpty))
-          new State(program)(s.tail, pPrime, tPrime, ctPrime)
-        }
-
-        case IfStatement(id, e, l) => {
-          val sPrime = if (program.eval(e, p) == Value(0)) {
-            s.tail
-          } else {
-            program.lookup(l)
-          }
-          val ctPrimePrime = if (program.tainted(e, t)) {
-            ctPrime + program.conditionals(id)
-          } else {
-            ctPrime
-          }
-          new State(program)(sPrime, p, t, ctPrimePrime)
-        }
-
-        case _ => throw new IllegalStateException("next: unknown statement: " + s.head)
-      }
-    }
-  }
-
-  def isEnd: Boolean = s.isEmpty
 }
