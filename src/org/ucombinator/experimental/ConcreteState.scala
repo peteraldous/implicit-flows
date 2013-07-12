@@ -1,8 +1,8 @@
 package org.ucombinator.experimental
 
-class ConcreteState(program: Program)(s: List[Statement], p: Map[Variable, Value], t: Map[Variable, Boolean], ct: Set[List[Statement]]) {
+class ConcreteState(program: Program)(s: List[Statement], rho: Map[Variable, Value], t: Map[Variable, Boolean], ct: Set[List[Statement]]) {
   val statements = s
-  val env = p
+  val env = rho
   val taintedVars = t
   val contextTaint = ct
 
@@ -14,17 +14,17 @@ class ConcreteState(program: Program)(s: List[Statement], p: Map[Variable, Value
     } else {
       val ctPrime = ct.filter((source) => program.influence(source).contains(s))
       s.head match {
-        case LabelStatement(id, l) => new ConcreteState(program)(s.tail, p, t, ctPrime)
-        case GotoStatement(id, l) => new ConcreteState(program)(program.lookup(l), p, t, ctPrime)
+        case LabelStatement(id, l) => new ConcreteState(program)(s.tail, env, t, ctPrime)
+        case GotoStatement(id, l) => new ConcreteState(program)(program.lookup(l), env, t, ctPrime)
 
         case AssignmentStatement(id, v, e) => {
-          val pPrime = p + Pair(v, program.eval(e, p))
+          val pPrime = env + Pair(v, program.eval(e, env))
           val tPrime = t + Pair(v, program.tainted(e, t) || !(ct.isEmpty))
           new ConcreteState(program)(s.tail, pPrime, tPrime, ctPrime)
         }
 
         case IfStatement(id, e, l) => {
-          val sPrime = if (program.eval(e, p) == Value(0)) {
+          val sPrime = if (program.eval(e, env) == Value(0)) {
             s.tail
           } else {
             program.lookup(l)
@@ -34,7 +34,7 @@ class ConcreteState(program: Program)(s: List[Statement], p: Map[Variable, Value
           } else {
             ctPrime
           }
-          new ConcreteState(program)(sPrime, p, t, ctPrimePrime)
+          new ConcreteState(program)(sPrime, env, t, ctPrimePrime)
         }
 
         case _ => throw new IllegalStateException("next: unknown statement: " + s.head)
