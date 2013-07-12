@@ -111,12 +111,12 @@ class Program(s: List[Statement]) {
 
   /**
    * path: finds the path beginning at start and ending at end.
-   * 
+   *
    * The path is represented as a list of lists of Statement objects. Each list includes a Statement and all statements that
    * succeed it in the order given in the source code. The lists each represent a Statement (and its successors in source code
    * order) that would be executed if an interpreter began at start; that is, the result includes each Statement (bundled
    * with its successors) in program order from start to end.
-   * 
+   *
    * precondition: No conditional statements may exist in program order between start and end.
    */
   def path(end: List[Statement])(start: List[Statement]): List[List[Statement]] = {

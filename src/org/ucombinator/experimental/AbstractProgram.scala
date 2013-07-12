@@ -23,48 +23,48 @@ class AbstractProgram(s: List[AbstractStatement]) {
   def abstractAdd(lhs: AbstractValue, rhs: AbstractValue): AbstractValue = {
     (lhs, rhs) match {
       // nzp is top
-      case (`nzp`, _) => nzp							// 7 cases - 7 total
-      case (_, `nzp`) => nzp							// 6 cases - 13 total
+      case (`nzp`, _) => nzp // 7 cases - 7 total
+      case (_, `nzp`) => nzp // 6 cases - 13 total
       // if they match (assuming no overflow), the sign remains the same
-      case (copy, paste) if (copy == paste) => copy		// 6 cases - 19 total
+      case (copy, paste) if (copy == paste) => copy // 6 cases - 19 total
       // zero doesn't change the case
-      case (`z`, s) => s								// 5 cases - 24 total
-      case (s, `z`) => s								// 5 cases - 29 total
+      case (`z`, s) => s // 5 cases - 24 total
+      case (s, `z`) => s // 5 cases - 29 total
       // this catches all cases that have n in one and p in the other
       case (lhs, rhs) if ((AbstractValues.positive.contains(rhs) && AbstractValues.negative.contains(lhs)) ||
         (AbstractValues.negative.contains(rhs) && AbstractValues.positive.contains(lhs))) => nzp
-        												// 16 cases - 45 total
-      case (`nz`, `n`) => nz							// 46 total
-      case (`n`, `nz`) => nz							// 47 total
-      case (`zp`, `p`) => zp							// 48 total
-      case (`p`, `zp`) => zp							// 49 total
+      // 16 cases - 45 total
+      case (`nz`, `n`) => nz // 46 total
+      case (`n`, `nz`) => nz // 47 total
+      case (`zp`, `p`) => zp // 48 total
+      case (`p`, `zp`) => zp // 49 total
     }
   }
 
   def abstractMultiply(lhs: AbstractValue, rhs: AbstractValue): AbstractValue = {
     (lhs, rhs) match {
-      case (`z`, _) => z		// 7 cases  - 7 total
-      case (_, `z`) => z		// 6 cases  - 13 total
-      case (`p`, s) => s		// 6 cases  - 19 total
-      case (s, `p`) => s		// 5 cases  - 24 total
-      case (`nzp`, s) => nzp	// 5 cases  - 29 total
-      case (s, `nzp`) => nzp	// 4 cases  - 33 total
-      case (`n`, `n`) => p		// 34 total
-      case (`n`, `nz`) => zp	// 35 total
-      case (`nz`, `n`) => zp	// 36 total
-      case (`n`, `zp`) => nz	// 37 total
-      case (`zp`, `n`) => nz	// 38 total
-      case (`n`, `np`) => np	// 39 total
-      case (`np`, `n`) => np	// 40 total
-      case (`nz`, `nz`) => zp	// 41 total
-      case (`zp`, `zp`) => zp	// 42 total
-      case (`np`, `np`) => np	// 43 total
-      case (`zp`, `np`) => nzp	// 44 total
-      case (`np`, `zp`) => nzp	// 45 total
-      case (`zp`, `nz`) => nz	// 46 total
-      case (`nz`, `zp`) => nz	// 47 total
-      case (`nz`, `np`) => nzp	// 48 total
-      case (`np`, `nz`) => nzp	// 49 total
+      case (`z`, _) => z // 7 cases  - 7 total
+      case (_, `z`) => z // 6 cases  - 13 total
+      case (`p`, s) => s // 6 cases  - 19 total
+      case (s, `p`) => s // 5 cases  - 24 total
+      case (`nzp`, s) => nzp // 5 cases  - 29 total
+      case (s, `nzp`) => nzp // 4 cases  - 33 total
+      case (`n`, `n`) => p // 34 total
+      case (`n`, `nz`) => zp // 35 total
+      case (`nz`, `n`) => zp // 36 total
+      case (`n`, `zp`) => nz // 37 total
+      case (`zp`, `n`) => nz // 38 total
+      case (`n`, `np`) => np // 39 total
+      case (`np`, `n`) => np // 40 total
+      case (`nz`, `nz`) => zp // 41 total
+      case (`zp`, `zp`) => zp // 42 total
+      case (`np`, `np`) => np // 43 total
+      case (`zp`, `np`) => nzp // 44 total
+      case (`np`, `zp`) => nzp // 45 total
+      case (`zp`, `nz`) => nz // 46 total
+      case (`nz`, `zp`) => nz // 47 total
+      case (`nz`, `np`) => nzp // 48 total
+      case (`np`, `nz`) => nzp // 49 total
     }
   }
 
@@ -95,25 +95,6 @@ class AbstractProgram(s: List[AbstractStatement]) {
     case AbstractGotoStatement(tl, l) :: rest => firstCond(lookup(l), end)
     case (s: AbstractIfStatement) :: rest => s :: rest
     case _ => throw new IllegalStateException("firstCond: Could not match statements list: " + statements)
-  }
-
-  // TODO rename and document, possibly refactoring
-  def path(end: List[AbstractStatement])(statements: List[AbstractStatement]): List[List[AbstractStatement]] = {
-    def innerPath(statements: List[AbstractStatement], soFar: List[List[AbstractStatement]]): List[List[AbstractStatement]] = {
-      if (statements.isEmpty)
-        throw new IllegalStateException("path: No more statements and the end has not been reached")
-      else {
-        statements match {
-          case `end` => soFar
-          case (s: AbstractLabelStatement) :: rest => innerPath(rest, statements :: soFar)
-          case AbstractGotoStatement(tl, l) :: rest => innerPath(lookup(l), statements :: soFar)
-          case (s: AbstractAssignmentStatement) :: rest => innerPath(rest, statements :: soFar)
-          case (s: AbstractIfStatement) :: rest => throw new IllegalStateException("path: Conditionals are not permitted")
-          case _ => throw new IllegalStateException("path: unknown statement type")
-        }
-      }
-    }
-    innerPath(statements, Nil)
   }
 
   def firstState: AbstractState = {
@@ -186,21 +167,44 @@ class AbstractProgram(s: List[AbstractStatement]) {
     firstSuffixMatch(sources.head).get
   }
 
+  /**
+   * path: finds the path beginning at start and ending at end.
+   *
+   * The path is represented as a list of lists of Statement objects. Each list includes a Statement and all statements that
+   * succeed it in the order given in the source code. The lists each represent a Statement (and its successors in source code
+   * order) that would be executed if an interpreter began at start; that is, the result includes each Statement (bundled
+   * with its successors) in program order from start to end.
+   *
+   * precondition: No conditional statements may exist in program order between start and end.
+   */
+  def path(end: List[AbstractStatement])(start: List[AbstractStatement]): List[List[AbstractStatement]] = {
+    def innerPath(start: List[AbstractStatement], soFar: List[List[AbstractStatement]]): List[List[AbstractStatement]] = {
+      if (start.isEmpty)
+        throw new IllegalStateException("path: No more statements and the end has not been reached")
+      else {
+        start match {
+          case `end` => soFar
+          case (s: AbstractLabelStatement) :: rest => innerPath(rest, start :: soFar)
+          case AbstractGotoStatement(tl, l) :: rest => innerPath(lookup(l), start :: soFar)
+          case (s: AbstractAssignmentStatement) :: rest => innerPath(rest, start :: soFar)
+          case (s: AbstractIfStatement) :: rest => throw new IllegalStateException("path: Conditionals are not permitted")
+          case _ => throw new IllegalStateException("path: unknown statement type")
+        }
+      }
+    }
+    innerPath(start, Nil)
+  }
+
   def influence(s: List[AbstractStatement]): Set[List[AbstractStatement]] = {
     def innerInfl(sources: Set[List[AbstractStatement]], soFar: Set[List[AbstractStatement]]): Set[List[AbstractStatement]] = {
       val sourceHCD = hcd(sources)
       val (clearPaths, condPaths) = sources.partition((source) => firstCond(source, sourceHCD).isEmpty)
-      if (condPaths.isEmpty) {
+      if (condPaths.isEmpty)
         clearPaths.map(path(sourceHCD)).foldLeft(soFar)((set, list) => set | list.toSet)
-      } else {
-        def condSuccessors(pathWithCond: List[AbstractStatement]): Set[List[AbstractStatement]] = {
-          successors(firstCond(pathWithCond, sourceHCD))
-        }
-        val newSources = condPaths.foldLeft(clearPaths)((accumulated, condPath) => accumulated | condSuccessors(condPath))
-        val pathsToConds = condPaths.map((condPath) => path(firstCond(condPath, sourceHCD))(condPath))
-        val statementsInPathsToConds = pathsToConds.foldLeft(soFar)((statements, thisPath) => statements | thisPath.toSet)
-        innerInfl(newSources, statementsInPathsToConds)
-      }
+      else
+        innerInfl(
+          condPaths.foldLeft(clearPaths)((accumulated, condPath) => accumulated | successors(firstCond(condPath, sourceHCD))),
+          condPaths.map((condPath) => path(firstCond(condPath, sourceHCD))(condPath)).foldLeft(soFar)((statements, thisPath) => statements | thisPath.toSet))
     }
     s.head match {
       case i: AbstractIfStatement => innerInfl(successors(s), Set.empty)
