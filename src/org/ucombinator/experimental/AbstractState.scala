@@ -43,4 +43,19 @@ class AbstractState(program: AbstractProgram)(s: List[AbstractStatement], rho: M
     }
   }
 
+  /*
+   *   val statements = s
+  val env = rho
+  val taintedVars = t
+  val contextTaint = ct
+   */
+  override def equals(obj: Any): Boolean = {
+    obj match {
+      case as: AbstractState => statements == as.statements && env == as.env && taintedVars == as.taintedVars && contextTaint == as.contextTaint
+      case _ => false
+    }
+  }
+
+  def isEnd: Boolean = s.isEmpty
+
 }
