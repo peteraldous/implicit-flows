@@ -20,11 +20,14 @@ object AbstractAnalyzer extends App {
       successorGraph
     } else {
       val state = queue.head
-      if (state.isEnd || (seen contains state)) explore(queue.tail, successorGraph, seen + state) else {
+//      println("y: " + state.env(AbstractVariable("y")))
+      println(seen.size + " states have been seen")
+      val newSeen = seen + state
+      if (state.isEnd || (seen contains state)) explore(queue.tail, successorGraph, newSeen) else {
         val next = state.next
         val newQueue = queue ++ next
         val newGraph = successorGraph + Pair(state, if (successorGraph isDefinedAt state) successorGraph(state) | next else next) 
-        explore(newQueue, newGraph, seen + state)
+        explore(newQueue, newGraph, newSeen)
       }
     }
   }

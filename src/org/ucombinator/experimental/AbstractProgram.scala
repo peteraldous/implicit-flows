@@ -71,7 +71,7 @@ class AbstractProgram(s: List[AbstractStatement]) {
   def abstractCompare(lhs: AbstractValue, rhs: AbstractValue): AbstractValue = {
     (lhs, rhs) match {
       // this is the only case that must be true (positive)
-      case (copy, paste) if (copy == paste) => zp
+      case (`z`, `z`) => p
       case (lhs, rhs) => if ((AbstractValues.positive.contains(lhs) && AbstractValues.positive.contains(rhs)) ||
         (AbstractValues.zero.contains(lhs) && AbstractValues.zero.contains(rhs)) ||
         (AbstractValues.negative.contains(lhs) && AbstractValues.negative.contains(rhs))) zp else z

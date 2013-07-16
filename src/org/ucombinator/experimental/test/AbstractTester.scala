@@ -19,6 +19,7 @@ object AbstractTester extends Tester {
     implicitFlow
     eval
     fixedPoint
+    loop
   }
 
   private def undefOrFalse[A](key: A, map: Map[A, Boolean]): Boolean = {
@@ -109,5 +110,17 @@ object AbstractTester extends Tester {
     test(taintedVars(AbstractVariable("x")), "simpleTaint: x is tainted")
     test(!taintedVars(AbstractVariable("y")), "simpleTaint: y is not tainted (strong update)")
     test(taintedVars(AbstractVariable("z")), "simpleTaint: z is tainted (implicit flow)")
+  }
+
+  private def loop: Unit = {
+    val code = "(:= y 0)(label _loop)(if (= y 10) _end)(:= y (+ y 1))(goto _loop)(label _end)"
+    val firstState = AbstractAnalyzer.setup(code)
+    val stateGraph = AbstractAnalyzer.explore(List(firstState), Map.empty)
+//    val finalState = linearFinal(firstState, stateGraph)
+//    val taintedVars = finalState.taintedVars
+
+//    test(finalState.contextTaint.isEmpty, "implicitFlow: no context taint")
+//    test(taintedVars(AbstractVariable("x")), "simpleTaint: x is tainted")
+//    test(!taintedVars(AbstractVariable("y")), "simpleTaint: y is not tainted")
   }
 }

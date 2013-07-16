@@ -12,6 +12,7 @@ object ConcreteTester extends Tester {
     simpleTaint
     arithmetic
     implicitFlow
+    loop
   }
   
   private def undefOrFalse[A](key: A, map: Map[A, Boolean]): Boolean = {
@@ -58,5 +59,17 @@ object ConcreteTester extends Tester {
     test(taintedVars(Variable("x")), "simpleTaint: x is tainted")
     test(!taintedVars(Variable("y")), "simpleTaint: y is not tainted (strong update)")
     test(taintedVars(Variable("z")), "simpleTaint: z is tainted (implicit flow)")
+  }
+
+  private def loop: Unit = {
+    val code = "(:= y 0)(label _loop)(if (= y 10) _end)(:= y (+ y 1))(goto _loop)(label _end)"
+    val firstState = ConcreteAnalyzer.setup(code)
+    val stateGraph = ConcreteAnalyzer.explore(firstState, Map.empty)
+    val finalState = ConcreteAnalyzer.finalState(firstState, stateGraph)
+    val taintedVars = finalState.taintedVars
+
+    test(finalState.contextTaint.isEmpty, "implicitFlow: no context taint")
+    test(taintedVars(Variable("x")), "simpleTaint: x is tainted")
+    test(!taintedVars(Variable("y")), "simpleTaint: y is not tainted")
   }
 }
