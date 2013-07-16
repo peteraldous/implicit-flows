@@ -11,10 +11,10 @@ object AbstractAnalyzer extends App {
 
   def analyze(sourceCode: String): Unit = {
     val firstState = setup(sourceCode)
-    printGraph(firstState, explore(List(firstState), Map.empty))
+    printGraph(firstState, explore(List(firstState)))
   }
 
-  def explore(queue: List[AbstractState], successorGraph: Map[AbstractState, Set[AbstractState]]): Map[AbstractState, Set[AbstractState]] = {
+  def explore(queue: List[AbstractState], successorGraph: Map[AbstractState, Set[AbstractState]] = Map.empty): Map[AbstractState, Set[AbstractState]] = {
     if (queue.isEmpty) {
       successorGraph
     } else {

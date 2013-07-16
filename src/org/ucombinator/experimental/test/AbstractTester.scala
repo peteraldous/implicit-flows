@@ -83,7 +83,7 @@ object AbstractTester extends Tester {
   private def simpleTaint: Unit = {
     val code = "(:= y x)(:= z 3)"
     val firstState = AbstractAnalyzer.setup(code)
-    val stateGraph = AbstractAnalyzer.explore(List(firstState), Map.empty)
+    val stateGraph = AbstractAnalyzer.explore(List(firstState))
     val finalState = linearFinal(firstState, stateGraph)
     val taintedVars = finalState.taintedVars
 
@@ -106,7 +106,7 @@ object AbstractTester extends Tester {
   private def arithmetic: Unit = {
     val code = "(:= add (+ 1 2))(:= mult (* 4 6))(:= compeq (= 5 5))(:= compneq (= 8 3))(:= compz (= 8 0))"
     val firstState = AbstractAnalyzer.setup(code)
-    val stateGraph = AbstractAnalyzer.explore(List(firstState), Map.empty)
+    val stateGraph = AbstractAnalyzer.explore(List(firstState))
     val finalState = linearFinal(firstState, stateGraph)
     val env = finalState.env
 
@@ -120,7 +120,7 @@ object AbstractTester extends Tester {
   private def implicitFlow: Unit = {
     val code = "(:= y x)(if (= x 1) _f)(:= z 1)(goto _end)(label _f)(:= z 0)(label _end)(:= y 2)"
     val firstState = AbstractAnalyzer.setup(code)
-    val stateGraph = AbstractAnalyzer.explore(List(firstState), Map.empty)
+    val stateGraph = AbstractAnalyzer.explore(List(firstState))
     val finalState = linearFinal(firstState, stateGraph)
     val taintedVars = finalState.taintedVars
 
@@ -159,7 +159,7 @@ object AbstractTester extends Tester {
   private def loop: Unit = {
     val code = "(:= y 0)(label _loop)(if (= y 10) _end)(:= y (+ y 1))(goto _loop)(label _end)"
     val firstState = AbstractAnalyzer.setup(code)
-    val stateGraph = AbstractAnalyzer.explore(List(firstState), Map.empty)
+    val stateGraph = AbstractAnalyzer.explore(List(firstState))
     val finalState = nonlinearFinal(firstState, stateGraph)
     val taintedVars = finalState.taintedVars
 
@@ -171,7 +171,7 @@ object AbstractTester extends Tester {
   private def infiniteLoop: Unit = {
     val code = "(label _forever)(goto _forever)"
     val firstState = AbstractAnalyzer.setup(code)
-    val stateGraph = AbstractAnalyzer.explore(List(firstState), Map.empty)
+    val stateGraph = AbstractAnalyzer.explore(List(firstState))
     
     test(true, "infiniteLoop: analyzer didn't loop indefinitely")
   }
