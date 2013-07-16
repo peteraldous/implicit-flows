@@ -66,8 +66,15 @@ object AbstractTester extends Tester {
 
     test(graph.isDefinedAt(paste) && graph(paste) == value,
       "fixedPoint: separately instantiated key exists and has the expected value")
-
     test(!graph.isDefinedAt(other) || graph(other) != value, "fixedPoint: different state does not match")
+    
+    val env = Map(Pair(AbstractVariable("x"), p))
+    test(env equals (env + Pair(AbstractVariable("x"), p)), "fixedPoint: adding a pair to a map that already contains it doesn't change it")
+    
+    val set = Set(copy)
+    test(set contains paste, "fixedPoint: set contains the expected value")
+    test(!(set contains other), "fixedPoint: set does not contain a different state")
+    test(set equals (set + paste), "fixedPoint: adding a value to a set that already contains it doesn't change it")
   }
 
   private def simpleTaint: Unit = {
