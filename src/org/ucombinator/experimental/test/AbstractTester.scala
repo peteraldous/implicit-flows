@@ -22,6 +22,7 @@ object AbstractTester extends Tester {
     eval
     fixedPoint
     loop
+    infiniteLoop
   }
 
   private def undefOrFalse[A](key: A, map: Map[A, Boolean]): Boolean = {
@@ -165,5 +166,13 @@ object AbstractTester extends Tester {
     test(finalState.contextTaint.isEmpty, "implicitFlow: no context taint")
     test(taintedVars(AbstractVariable("x")), "simpleTaint: x is tainted")
     test(!taintedVars(AbstractVariable("y")), "simpleTaint: y is not tainted")
+  }
+  
+  private def infiniteLoop: Unit = {
+    val code = "(label _forever)(goto _forever)"
+    val firstState = AbstractAnalyzer.setup(code)
+    val stateGraph = AbstractAnalyzer.explore(List(firstState), Map.empty)
+    
+    test(true, "infiniteLoop: analyzer didn't loop indefinitely")
   }
 }
