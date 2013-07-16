@@ -14,20 +14,16 @@ object AbstractAnalyzer extends App {
     printGraph(firstState, explore(List(firstState), Map.empty))
   }
 
-  def explore(queue: List[AbstractState], successorGraph: Map[AbstractState, Set[AbstractState]],
-    seen: Set[AbstractState] = Set.empty): Map[AbstractState, Set[AbstractState]] = {
+  def explore(queue: List[AbstractState], successorGraph: Map[AbstractState, Set[AbstractState]]): Map[AbstractState, Set[AbstractState]] = {
     if (queue.isEmpty) {
       successorGraph
     } else {
       val state = queue.head
-//      println("y: " + state.env(AbstractVariable("y")))
-      println(seen.size + " states have been seen")
-      val newSeen = seen + state
-      if (state.isEnd || (seen contains state)) explore(queue.tail, successorGraph, newSeen) else {
+      if (state.isEnd || (successorGraph.keys.exists((st) => st equals state))) explore(queue.tail, successorGraph) else {
         val next = state.next
         val newQueue = queue ++ next
         val newGraph = successorGraph + Pair(state, if (successorGraph isDefinedAt state) successorGraph(state) | next else next) 
-        explore(newQueue, newGraph, newSeen)
+        explore(newQueue, newGraph)
       }
     }
   }

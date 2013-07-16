@@ -11,6 +11,8 @@ import org.ucombinator.experimental.p
 import org.ucombinator.experimental.z
 import org.ucombinator.experimental.zp
 import org.ucombinator.experimental.ToyParser
+import scala.util.Failure
+import scala.util.Success
 
 object AbstractTester extends Tester {
   override def tests: Unit = {
@@ -57,9 +59,9 @@ object AbstractTester extends Tester {
     val program2 = new AbstractProgram(stmts2)
     test(program equals program2, "fixedPoint: AbstractProgram equals works")
     val copy = new AbstractState(program)(stmts, Map(Pair(AbstractVariable("x"), p)), Map(Pair(AbstractVariable("x"), true)),
-        Set.empty)
+      Set.empty)
     val paste = new AbstractState(program2)(stmts2, Map(Pair(AbstractVariable("x"), p)), Map(Pair(AbstractVariable("x"), true)),
-        Set.empty)
+      Set.empty)
     val other = copy.next.head
     val value = 2
     val graph = Map(Pair(copy, value))
@@ -67,10 +69,10 @@ object AbstractTester extends Tester {
     test(graph.isDefinedAt(paste) && graph(paste) == value,
       "fixedPoint: separately instantiated key exists and has the expected value")
     test(!graph.isDefinedAt(other) || graph(other) != value, "fixedPoint: different state does not match")
-    
+
     val env = Map(Pair(AbstractVariable("x"), p))
     test(env equals (env + Pair(AbstractVariable("x"), p)), "fixedPoint: adding a pair to a map that already contains it doesn't change it")
-    
+
     val set = Set(copy)
     test(set contains paste, "fixedPoint: set contains the expected value")
     test(!(set contains other), "fixedPoint: set does not contain a different state")
@@ -127,15 +129,41 @@ object AbstractTester extends Tester {
     test(taintedVars(AbstractVariable("z")), "simpleTaint: z is tainted (implicit flow)")
   }
 
+  /*
+   * WARNING: finds _some_ terminal state, not the only one.
+   * 
+   * If no state exists without a successor, the result will be an exception.
+   */
+  private def nonlinearFinal(state: AbstractState, graph: Map[AbstractState, Set[AbstractState]], visited: Set[AbstractState] = Set.empty): AbstractState = {
+    if (visited contains state) {
+      scala.sys.error("infinite loop - no final state")
+    } else {
+      if (graph isDefinedAt state) {
+        val successors = graph(state)
+        val newVisited = visited + state
+        if (successors.size > 1) {
+          Try(nonlinearFinal(successors.head, graph, newVisited)) match {
+            case Success(fin) => fin
+            case Failure(_) => nonlinearFinal(successors.tail.head, graph, newVisited)
+          }
+        } else {
+          nonlinearFinal(successors.head, graph, newVisited)
+        }
+      } else {
+        state
+      }
+    }
+  }
+
   private def loop: Unit = {
     val code = "(:= y 0)(label _loop)(if (= y 10) _end)(:= y (+ y 1))(goto _loop)(label _end)"
     val firstState = AbstractAnalyzer.setup(code)
     val stateGraph = AbstractAnalyzer.explore(List(firstState), Map.empty)
-//    val finalState = linearFinal(firstState, stateGraph)
-//    val taintedVars = finalState.taintedVars
+    val finalState = nonlinearFinal(firstState, stateGraph)
+    val taintedVars = finalState.taintedVars
 
-//    test(finalState.contextTaint.isEmpty, "implicitFlow: no context taint")
-//    test(taintedVars(AbstractVariable("x")), "simpleTaint: x is tainted")
-//    test(!taintedVars(AbstractVariable("y")), "simpleTaint: y is not tainted")
+    test(finalState.contextTaint.isEmpty, "implicitFlow: no context taint")
+    test(taintedVars(AbstractVariable("x")), "simpleTaint: x is tainted")
+    test(!taintedVars(AbstractVariable("y")), "simpleTaint: y is not tainted")
   }
 }
