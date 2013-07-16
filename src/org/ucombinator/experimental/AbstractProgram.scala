@@ -117,6 +117,11 @@ class AbstractProgram(s: List[AbstractStatement]) {
     }
     allSuffixes(Set.empty, statements)
   }
+  
+  override def equals(obj: Any): Boolean = obj match {
+    case p: AbstractProgram => p.statements equals statements
+    case _ => false
+  }
 
   private def generateTables(statements: List[AbstractStatement]): Pair[Map[Label, List[AbstractStatement]], Map[Int, List[AbstractStatement]]] = {
     def innerGenerateTables(statements: List[AbstractStatement], labelsSoFar: Map[Label, List[AbstractStatement]], conditionalsSoFar: Map[Int, List[AbstractStatement]]): Pair[Map[Label, List[AbstractStatement]], Map[Int, List[AbstractStatement]]] = {

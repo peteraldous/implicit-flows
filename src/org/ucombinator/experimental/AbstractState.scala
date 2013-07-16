@@ -1,10 +1,11 @@
 package org.ucombinator.experimental
 
-class AbstractState(program: AbstractProgram)(s: List[AbstractStatement], rho: Map[AbstractVariable, AbstractValue], t: Map[AbstractVariable, Boolean], ct: Set[List[AbstractStatement]]) {
+class AbstractState(prog: AbstractProgram)(s: List[AbstractStatement], rho: Map[AbstractVariable, AbstractValue], t: Map[AbstractVariable, Boolean], ct: Set[List[AbstractStatement]]) {
   val statements = s
   val env = rho
   val taintedVars = t
   val contextTaint = ct
+  val program = prog
 
   override def toString = "(" + statements + ", " + env + ", " + taintedVars + ", " + contextTaint + ")"
 
@@ -51,7 +52,7 @@ class AbstractState(program: AbstractProgram)(s: List[AbstractStatement], rho: M
    */
   override def equals(obj: Any): Boolean = {
     obj match {
-      case as: AbstractState => statements == as.statements && env == as.env && taintedVars == as.taintedVars && contextTaint == as.contextTaint
+      case as: AbstractState => (program equals as.program) && (statements equals as.statements) && (env equals as.env) && (taintedVars equals as.taintedVars) && (contextTaint equals as.contextTaint)
       case _ => false
     }
   }

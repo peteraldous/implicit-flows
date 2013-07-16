@@ -1,7 +1,6 @@
 package org.ucombinator.experimental.test
 
 import scala.util.Try
-
 import org.ucombinator.experimental.AbstractAnalyzer
 import org.ucombinator.experimental.AbstractProgram
 import org.ucombinator.experimental.AbstractState
@@ -11,6 +10,7 @@ import org.ucombinator.experimental.AbstractVariable
 import org.ucombinator.experimental.p
 import org.ucombinator.experimental.z
 import org.ucombinator.experimental.zp
+import org.ucombinator.experimental.ToyParser
 
 object AbstractTester extends Tester {
   override def tests: Unit = {
@@ -49,9 +49,17 @@ object AbstractTester extends Tester {
   }
 
   private def fixedPoint: Unit = {
-    val program = new AbstractProgram(List.empty)
-    val copy = AbstractAnalyzer.setup("(:= y x)(:= z 3)")
-    val paste = AbstractAnalyzer.setup("(:= y x)(:= z 3)")
+    val code = "(:= y x)(:= z 3)"
+    val stmts = ToyParser.applyStmts(code, 0).map((stmt) => stmt.abstractMe)
+    val stmts2 = ToyParser.applyStmts(code, 0).map((stmt) => stmt.abstractMe)
+    test(stmts equals stmts2, "fixedPoint: List[AbstractStatements] equals works")
+    val program = new AbstractProgram(stmts)
+    val program2 = new AbstractProgram(stmts2)
+    test(program equals program2, "fixedPoint: AbstractProgram equals works")
+    val copy = new AbstractState(program)(stmts, Map(Pair(AbstractVariable("x"), p)), Map(Pair(AbstractVariable("x"), true)),
+        Set.empty)
+    val paste = new AbstractState(program2)(stmts2, Map(Pair(AbstractVariable("x"), p)), Map(Pair(AbstractVariable("x"), true)),
+        Set.empty)
     val other = copy.next.head
     val value = 2
     val graph = Map(Pair(copy, value))
@@ -59,7 +67,7 @@ object AbstractTester extends Tester {
     test(graph.isDefinedAt(paste) && graph(paste) == value,
       "fixedPoint: separately instantiated key exists and has the expected value")
 
-    test(!graph.isDefinedAt(other), "fixedPoint: different state does not match")
+    test(!graph.isDefinedAt(other) || graph(other) != value, "fixedPoint: different state does not match")
   }
 
   private def simpleTaint: Unit = {
