@@ -60,3 +60,7 @@ class AbstractState(prog: AbstractProgram)(s: List[AbstractStatement], rho: Map[
   def isEnd: Boolean = s.isEmpty
 
 }
+
+object AbstractStateFactory {
+  def empty: AbstractState = new AbstractState(AbstractProgramFactory.empty)(List.empty, Map.empty, Map.empty, Set.empty)
+}

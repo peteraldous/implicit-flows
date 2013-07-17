@@ -117,7 +117,7 @@ class AbstractProgram(s: List[AbstractStatement]) {
     }
     allSuffixes(Set.empty, statements)
   }
-  
+
   override def equals(obj: Any): Boolean = obj match {
     case p: AbstractProgram => p.statements equals statements
     case _ => false
@@ -216,4 +216,8 @@ class AbstractProgram(s: List[AbstractStatement]) {
       case _ => Set.empty
     }
   }
+}
+
+object AbstractProgramFactory {
+  def empty: AbstractProgram = new AbstractProgram(List.empty)
 }

@@ -82,97 +82,67 @@ object AbstractTester extends Tester {
 
   private def simpleTaint: Unit = {
     val code = "(:= y x)(:= z 3)"
-    val firstState = AbstractAnalyzer.setup(code)
-    val stateGraph = AbstractAnalyzer.explore(List(firstState))
-    val finalState = linearFinal(firstState, stateGraph)
-    val taintedVars = finalState.taintedVars
+    val result = AbstractAnalyzer.analyze(code)
+    val stateGraph = result.successorGraph
+    for (finalState <- result.finalStates) {
+      val taintedVars = finalState.taintedVars
 
-    test(finalState.contextTaint.isEmpty, "simpleTaint: no context taint")
-    test(taintedVars(AbstractVariable("x")), "simpleTaint: x is tainted")
-    test(taintedVars(AbstractVariable("y")), "simpleTaint: y is tainted")
-    test(undefOrFalse(AbstractVariable("z"), taintedVars), "simpleTaint: non-tainted variable is not tainted")
-    test(undefOrFalse(AbstractVariable("a"), taintedVars), "simpleTaint: non-existent variable is not tainted")
-    test(finalState.env(AbstractVariable("x")) == finalState.env(AbstractVariable("y")), "simpleTaint: x == y")
-  }
-
-  private def linearFinal(state: AbstractState, graph: Map[AbstractState, Set[AbstractState]]): AbstractState = {
-    if (graph isDefinedAt state) {
-      linearFinal(graph(state).head, graph)
-    } else {
-      state
+      test(finalState.contextTaint.isEmpty, "simpleTaint: no context taint")
+      test(taintedVars(AbstractVariable("x")), "simpleTaint: x is tainted")
+      test(taintedVars(AbstractVariable("y")), "simpleTaint: y is tainted")
+      test(undefOrFalse(AbstractVariable("z"), taintedVars), "simpleTaint: non-tainted variable is not tainted")
+      test(undefOrFalse(AbstractVariable("a"), taintedVars), "simpleTaint: non-existent variable is not tainted")
+      test(finalState.env(AbstractVariable("x")) == finalState.env(AbstractVariable("y")), "simpleTaint: x == y")
     }
   }
 
   private def arithmetic: Unit = {
     val code = "(:= add (+ 1 2))(:= mult (* 4 6))(:= compeq (= 5 5))(:= compneq (= 8 3))(:= compz (= 8 0))"
-    val firstState = AbstractAnalyzer.setup(code)
-    val stateGraph = AbstractAnalyzer.explore(List(firstState))
-    val finalState = linearFinal(firstState, stateGraph)
-    val env = finalState.env
+    val result = AbstractAnalyzer.analyze(code)
+    val stateGraph = result.successorGraph
+    for (finalState <- result.finalStates) {
+      val env = finalState.env
 
-    test(env.isDefinedAt(AbstractVariable("add")) && env(AbstractVariable("add")) == p, "arithmetic: addition")
-    test(env.isDefinedAt(AbstractVariable("mult")) && env(AbstractVariable("mult")) == p, "arithmetic: multiplication")
-    test(env.isDefinedAt(AbstractVariable("compeq")) && env(AbstractVariable("compeq")) == zp, "arithmetic: comparison (equal)")
-    test(env.isDefinedAt(AbstractVariable("compneq")) && env(AbstractVariable("compneq")) == zp, "arithmetic: comparison (not equal but can't determine)")
-    test(env.isDefinedAt(AbstractVariable("compz")) && env(AbstractVariable("compz")) == z, "arithmetic: comparison (not equal)")
+      test(env.isDefinedAt(AbstractVariable("add")) && env(AbstractVariable("add")) == p, "arithmetic: addition")
+      test(env.isDefinedAt(AbstractVariable("mult")) && env(AbstractVariable("mult")) == p, "arithmetic: multiplication")
+      test(env.isDefinedAt(AbstractVariable("compeq")) && env(AbstractVariable("compeq")) == zp, "arithmetic: comparison (equal)")
+      test(env.isDefinedAt(AbstractVariable("compneq")) && env(AbstractVariable("compneq")) == zp, "arithmetic: comparison (not equal but can't determine)")
+      test(env.isDefinedAt(AbstractVariable("compz")) && env(AbstractVariable("compz")) == z, "arithmetic: comparison (not equal)")
+    }
   }
 
   private def implicitFlow: Unit = {
     val code = "(:= y x)(if (= x 1) _f)(:= z 1)(goto _end)(label _f)(:= z 0)(label _end)(:= y 2)"
-    val firstState = AbstractAnalyzer.setup(code)
-    val stateGraph = AbstractAnalyzer.explore(List(firstState))
-    val finalState = linearFinal(firstState, stateGraph)
-    val taintedVars = finalState.taintedVars
+    val result = AbstractAnalyzer.analyze(code)
+    val stateGraph = result.successorGraph
+    for (finalState <- result.finalStates) {
+      val taintedVars = finalState.taintedVars
 
-    test(finalState.contextTaint.isEmpty, "implicitFlow: no context taint")
-    test(taintedVars(AbstractVariable("x")), "simpleTaint: x is tainted")
-    test(!taintedVars(AbstractVariable("y")), "simpleTaint: y is not tainted (strong update)")
-    test(taintedVars(AbstractVariable("z")), "simpleTaint: z is tainted (implicit flow)")
-  }
-
-  /*
-   * WARNING: finds _some_ terminal state, not the only one.
-   * 
-   * If no state exists without a successor, the result will be an exception.
-   */
-  private def nonlinearFinal(state: AbstractState, graph: Map[AbstractState, Set[AbstractState]], visited: Set[AbstractState] = Set.empty): AbstractState = {
-    if (visited contains state) {
-      scala.sys.error("infinite loop - no final state")
-    } else {
-      if (graph isDefinedAt state) {
-        val successors = graph(state)
-        val newVisited = visited + state
-        if (successors.size > 1) {
-          Try(nonlinearFinal(successors.head, graph, newVisited)) match {
-            case Success(fin) => fin
-            case Failure(_) => nonlinearFinal(successors.tail.head, graph, newVisited)
-          }
-        } else {
-          nonlinearFinal(successors.head, graph, newVisited)
-        }
-      } else {
-        state
-      }
+      test(finalState.contextTaint.isEmpty, "implicitFlow: no context taint")
+      test(taintedVars(AbstractVariable("x")), "simpleTaint: x is tainted")
+      test(!taintedVars(AbstractVariable("y")), "simpleTaint: y is not tainted (strong update)")
+      test(taintedVars(AbstractVariable("z")), "simpleTaint: z is tainted (implicit flow)")
     }
   }
 
   private def loop: Unit = {
     val code = "(:= y 0)(label _loop)(if (= y 10) _end)(:= y (+ y 1))(goto _loop)(label _end)"
-    val firstState = AbstractAnalyzer.setup(code)
-    val stateGraph = AbstractAnalyzer.explore(List(firstState))
-    val finalState = nonlinearFinal(firstState, stateGraph)
-    val taintedVars = finalState.taintedVars
+    val result = AbstractAnalyzer.analyze(code)
+    val stateGraph = result.successorGraph
+    for (finalState <- result.finalStates) {
+      val taintedVars = finalState.taintedVars
 
-    test(finalState.contextTaint.isEmpty, "implicitFlow: no context taint")
-    test(taintedVars(AbstractVariable("x")), "simpleTaint: x is tainted")
-    test(!taintedVars(AbstractVariable("y")), "simpleTaint: y is not tainted")
+      test(finalState.contextTaint.isEmpty, "implicitFlow: no context taint")
+      test(taintedVars.getOrElse(AbstractVariable("x"), false), "simpleTaint: x is tainted")
+      test(!taintedVars.getOrElse(AbstractVariable("y"), true), "simpleTaint: y is not tainted")
+    }
   }
-  
+
   private def infiniteLoop: Unit = {
     val code = "(label _forever)(goto _forever)"
     val firstState = AbstractAnalyzer.setup(code)
     val stateGraph = AbstractAnalyzer.explore(List(firstState))
-    
+
     test(true, "infiniteLoop: analyzer didn't loop indefinitely")
   }
 }

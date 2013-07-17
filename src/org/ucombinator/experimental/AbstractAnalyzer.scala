@@ -5,25 +5,47 @@ import java.io.InputStreamReader
 
 object AbstractAnalyzer extends App {
 
+  class Result(first: AbstractState, last: Set[AbstractState], graph: Map[AbstractState, Set[AbstractState]]) {
+    val initialState = first
+    val finalStates = last
+    val successorGraph = graph
+
+    def +(state: AbstractState): Result = {
+      new Result(first, last + state, graph)
+    }
+
+    def +(pair: Pair[AbstractState, Set[AbstractState]]): Result = {
+      new Result(first, last, graph + pair)
+    }
+  }
+
+  object ResultFactory {
+    def empty: Result = new Result(AbstractStateFactory.empty, Set.empty, Map.empty)
+  }
+
   def setup(sourceCode: String): AbstractState = {
     new AbstractProgram(ToyParser.applyStmts(sourceCode, 0) map TypeManager.abstractStmt).firstState
   }
 
-  def analyze(sourceCode: String): Unit = {
+  def analyze(sourceCode: String): Result = {
     val firstState = setup(sourceCode)
-    printGraph(firstState, explore(List(firstState)))
+    explore(List(firstState))
   }
 
-  def explore(queue: List[AbstractState], successorGraph: Map[AbstractState, Set[AbstractState]] = Map.empty): Map[AbstractState, Set[AbstractState]] = {
+  def explore(queue: List[AbstractState], intermediateResult: Result = ResultFactory.empty): Result = {
     if (queue.isEmpty) {
-      successorGraph
+      intermediateResult
     } else {
       val state = queue.head
-      if (state.isEnd || (successorGraph.keys.exists((st) => st equals state))) explore(queue.tail, successorGraph) else {
-        val next = state.next
-        val newQueue = queue ++ next
-        val newGraph = successorGraph + Pair(state, if (successorGraph isDefinedAt state) successorGraph(state) | next else next) 
-        explore(newQueue, newGraph)
+      if (state.isEnd) {
+        explore(queue.tail, intermediateResult + state)
+      } else {
+        if (intermediateResult.successorGraph.keys.exists((st) => st equals state)) explore(queue.tail, intermediateResult) else {
+          val next = state.next
+          val newQueue = queue ++ next
+          val graphUpdate = Pair(state, if (intermediateResult.successorGraph isDefinedAt state) intermediateResult.successorGraph(state) | next else next)
+          explore(newQueue, intermediateResult + graphUpdate)
+        }
       }
     }
   }
