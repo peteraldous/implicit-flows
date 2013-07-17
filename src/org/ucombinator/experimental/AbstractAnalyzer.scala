@@ -5,7 +5,7 @@ import java.io.InputStreamReader
 
 object AbstractAnalyzer extends App {
 
-  class Result(first: AbstractState, last: Set[AbstractState], graph: Map[AbstractState, Set[AbstractState]]) {
+  class Result(first: AbstractState, last: Set[AbstractState] = Set.empty, graph: Map[AbstractState, Set[AbstractState]] = Map.empty) {
     val initialState = first
     val finalStates = last
     val successorGraph = graph
@@ -19,20 +19,20 @@ object AbstractAnalyzer extends App {
     }
   }
 
-  object ResultFactory {
-    def empty: Result = new Result(AbstractStateFactory.empty, Set.empty, Map.empty)
-  }
-
   def setup(sourceCode: String): AbstractState = {
     new AbstractProgram(ToyParser.applyStmts(sourceCode, 0) map TypeManager.abstractStmt).firstState
   }
 
   def analyze(sourceCode: String): Result = {
     val firstState = setup(sourceCode)
-    explore(List(firstState))
+    explore(firstState)
+  }
+  
+  def explore(state: AbstractState): Result = {
+    explore(List(state), new Result(state))
   }
 
-  def explore(queue: List[AbstractState], intermediateResult: Result = ResultFactory.empty): Result = {
+  def explore(queue: List[AbstractState], intermediateResult: Result): Result = {
     if (queue.isEmpty) {
       intermediateResult
     } else {

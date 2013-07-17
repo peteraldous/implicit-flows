@@ -24,9 +24,9 @@ object ConcreteTester extends Tester {
   }
   
   private def simpleTaint: Unit = {
-    val firstState = ConcreteAnalyzer.setup("(:= y x)(:= z 3)")
-    val stateGraph = ConcreteAnalyzer.explore(firstState, Map.empty)
-    val finalState = ConcreteAnalyzer.finalState(firstState, stateGraph)
+    val code = "(:= y x)(:= z 3)"
+    val result = ConcreteAnalyzer.analyze(code)
+    val finalState = result.finalState
     val taintedVars = finalState.taintedVars
     
     test(finalState.contextTaint.isEmpty, "simpleTaint: no context taint")
@@ -38,9 +38,10 @@ object ConcreteTester extends Tester {
   }
   
   private def arithmetic: Unit = {
-    val firstState = ConcreteAnalyzer.setup("(:= add (+ 1 2))(:= mult (* 4 6))(:= compeq (= 5 5))(:= compneq (= 8 3))")
-    val stateGraph = ConcreteAnalyzer.explore(firstState, Map.empty)
-    val finalState = ConcreteAnalyzer.finalState(firstState, stateGraph)
+    val code = "(:= add (+ 1 2))(:= mult (* 4 6))(:= compeq (= 5 5))(:= compneq (= 8 3))"
+    val result = ConcreteAnalyzer.analyze(code)
+    val stateGraph = result.successorGraph
+    val finalState = result.finalState
     val env = finalState.env
 
     test(env.isDefinedAt(Variable("add")) && env(Variable("add")) == Value(3), "arithmetic: addition")
@@ -50,9 +51,10 @@ object ConcreteTester extends Tester {
   }
   
   private def implicitFlow: Unit = {
-    val firstState = ConcreteAnalyzer.setup("(:= y x)(if (= x 1) _f)(:= z 1)(goto _end)(label _f)(:= z 0)(label _end)(:= y 2)")
-    val stateGraph = ConcreteAnalyzer.explore(firstState, Map.empty)
-    val finalState = ConcreteAnalyzer.finalState(firstState, stateGraph)
+    val code = "(:= y x)(if (= x 1) _f)(:= z 1)(goto _end)(label _f)(:= z 0)(label _end)(:= y 2)"
+    val result = ConcreteAnalyzer.analyze(code)
+    val stateGraph = result.successorGraph
+    val finalState = result.finalState
     val taintedVars = finalState.taintedVars
     
     test(finalState.contextTaint.isEmpty, "implicitFlow: no context taint")
@@ -63,9 +65,9 @@ object ConcreteTester extends Tester {
 
   private def loop: Unit = {
     val code = "(:= y 0)(label _loop)(if (= y 10) _end)(:= y (+ y 1))(goto _loop)(label _end)"
-    val firstState = ConcreteAnalyzer.setup(code)
-    val stateGraph = ConcreteAnalyzer.explore(firstState, Map.empty)
-    val finalState = ConcreteAnalyzer.finalState(firstState, stateGraph)
+    val result = ConcreteAnalyzer.analyze(code)
+    val stateGraph = result.successorGraph
+    val finalState = result.finalState
     val taintedVars = finalState.taintedVars
 
     test(finalState.contextTaint.isEmpty, "implicitFlow: no context taint")

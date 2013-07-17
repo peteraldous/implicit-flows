@@ -4,20 +4,33 @@ import java.io.BufferedReader
 import java.io.InputStreamReader
 
 object ConcreteAnalyzer extends App {
+  
+  class Result(init: ConcreteState, last: ConcreteState, graph: Map[ConcreteState, ConcreteState] = Map.empty) {
+    val initialState = init
+    val finalState = last
+    val successorGraph = graph
+    
+    def updateFinal(state: ConcreteState): Result = new Result(initialState, state, successorGraph)
+    def +(pair: Pair[ConcreteState, ConcreteState]): Result = new Result(initialState, finalState, successorGraph + pair)
+  }
 
   def setup(sourceCode: String): ConcreteState = {
     new Program(ToyParser.applyStmts(sourceCode, 0)).firstState
   }
 
-  def analyze(sourceCode: String): Unit = {
+  def analyze(sourceCode: String): Result = {
     val firstState = setup(sourceCode)
-    printGraph(firstState, explore(firstState, Map.empty))
+    startExploring(firstState)
+  }
+  
+  def startExploring(state: ConcreteState): Result = {
+    explore(state, new Result(state, state))
   }
 
-  def explore(state: ConcreteState, successorGraph: Map[ConcreteState, ConcreteState]): Map[ConcreteState, ConcreteState] = {
-    if (state.isEnd) successorGraph else {
+  def explore(state: ConcreteState, intermediateResult: Result): Result = {
+    if (state.isEnd) intermediateResult updateFinal state else {
       val next = state.next
-      explore(next, successorGraph + Pair(state, next))
+      explore(next, intermediateResult + Pair(state, next))
     }
   }
 

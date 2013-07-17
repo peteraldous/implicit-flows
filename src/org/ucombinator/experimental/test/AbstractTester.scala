@@ -140,8 +140,8 @@ object AbstractTester extends Tester {
 
   private def infiniteLoop: Unit = {
     val code = "(label _forever)(goto _forever)"
-    val firstState = AbstractAnalyzer.setup(code)
-    val stateGraph = AbstractAnalyzer.explore(List(firstState))
+    val result = AbstractAnalyzer.analyze(code)
+    val stateGraph = result.successorGraph
 
     test(true, "infiniteLoop: analyzer didn't loop indefinitely")
   }

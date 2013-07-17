@@ -62,5 +62,5 @@ class AbstractState(prog: AbstractProgram)(s: List[AbstractStatement], rho: Map[
 }
 
 object AbstractStateFactory {
-  def empty: AbstractState = new AbstractState(AbstractProgramFactory.empty)(List.empty, Map.empty, Map.empty, Set.empty)
+  def empty: AbstractState = AbstractProgramFactory.empty.firstState
 }
