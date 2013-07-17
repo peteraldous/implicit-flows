@@ -23,7 +23,7 @@ object AbstractAnalyzer extends App {
         if ((successorGraph isDefinedAt currentState) && !(seen contains currentState)) {
           for (state <- successorGraph(currentState)) {
             println(currentState + " -> " + state)
-            innerPrintGraph(state)
+            innerPrintGraph(state, seen + currentState)
           }
         }
       }

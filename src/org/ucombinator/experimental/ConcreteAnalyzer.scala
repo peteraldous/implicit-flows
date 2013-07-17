@@ -14,11 +14,11 @@ object ConcreteAnalyzer extends App {
     def +(pair: Pair[ConcreteState, ConcreteState]): Result = new Result(initialState, finalState, successorGraph + pair)
 
     def printGraph: Unit = {
-      def innerPrintGraph(currentState: ConcreteState): Unit = {
-        if (successorGraph isDefinedAt currentState) {
+      def innerPrintGraph(currentState: ConcreteState, seen: Set[ConcreteState] = Set.empty): Unit = {
+        if (!(seen contains currentState) && (successorGraph isDefinedAt currentState)) {
           val next = successorGraph(currentState)
           println(currentState + " -> " + next)
-          innerPrintGraph(next)
+          innerPrintGraph(next, seen + currentState)
         }
       }
       innerPrintGraph(initialState)
