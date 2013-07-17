@@ -6,7 +6,7 @@ import java.io.InputStreamReader
 object AbstractAnalyzer extends App {
 
   def setup(sourceCode: String): AbstractState = {
-    new AbstractProgram(ToyParser.applyStmts(sourceCode, 0) map { (stmt) => stmt.abstractMe }).firstState
+    new AbstractProgram(ToyParser.applyStmts(sourceCode, 0) map TypeManager.abstractStmt).firstState
   }
 
   def analyze(sourceCode: String): Unit = {

@@ -32,19 +32,16 @@ object ToyParser extends RegexParsers {
   }
 
   def applyStmts(input: String, ln: Int): List[Statement] = {
-    def innerApplyStmts(input: Input, ln: Int): List[Statement] = {
-      if (input.atEnd) List.empty else {
-        parse(stmt(ln), input) match {
-          case Success(result, remainder) => result :: innerApplyStmts(remainder, ln + 1)
-          case failure: NoSuccess => scala.sys.error(failure.msg)
-        }
+    def processParseResult(result: ParseResult[Statement]): List[Statement] = {
+      result match {
+        case Success(result, remainder) => result :: innerApplyStmts(remainder, ln + 1)
+        case failure: NoSuccess => scala.sys.error(failure.msg)
       }
     }
-    // TODO duplicating this code is ugly but I don't want to deal with type polymorphism at the moment
-    parse(stmt(ln), input) match {
-      case Success(result, remainder) => result :: innerApplyStmts(remainder, ln + 1)
-      case failure: NoSuccess => scala.sys.error(failure.msg)
+    def innerApplyStmts(input: Input, ln: Int): List[Statement] = {
+      if (input.atEnd) List.empty else processParseResult(parse(stmt(ln), input))
     }
+    processParseResult(parse(stmt(ln), input))
   }
 
   def applyExpr(input: String): Expression = parseAll(expr, input) match {
