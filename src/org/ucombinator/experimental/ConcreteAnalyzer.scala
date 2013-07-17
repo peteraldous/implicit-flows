@@ -4,14 +4,25 @@ import java.io.BufferedReader
 import java.io.InputStreamReader
 
 object ConcreteAnalyzer extends App {
-  
+
   class Result(init: ConcreteState, last: ConcreteState, graph: Map[ConcreteState, ConcreteState] = Map.empty) {
     val initialState = init
     val finalState = last
     val successorGraph = graph
-    
+
     def updateFinal(state: ConcreteState): Result = new Result(initialState, state, successorGraph)
     def +(pair: Pair[ConcreteState, ConcreteState]): Result = new Result(initialState, finalState, successorGraph + pair)
+
+    def printGraph: Unit = {
+      def innerPrintGraph(currentState: ConcreteState): Unit = {
+        if (successorGraph isDefinedAt currentState) {
+          val next = successorGraph(currentState)
+          println(currentState + " -> " + next)
+          innerPrintGraph(next)
+        }
+      }
+      innerPrintGraph(initialState)
+    }
   }
 
   def setup(sourceCode: String): ConcreteState = {
@@ -22,7 +33,7 @@ object ConcreteAnalyzer extends App {
     val firstState = setup(sourceCode)
     startExploring(firstState)
   }
-  
+
   def startExploring(state: ConcreteState): Result = {
     explore(state, new Result(state, state))
   }
@@ -32,16 +43,6 @@ object ConcreteAnalyzer extends App {
       val next = state.next
       explore(next, intermediateResult + Pair(state, next))
     }
-  }
-
-  def printGraph(initial: ConcreteState, graph: Map[ConcreteState, ConcreteState]): Unit = {
-    def innerPrintGraph(currentState: ConcreteState): Unit = {
-      if (!currentState.isEnd) {
-        println(currentState + " -> " + currentState.next)
-        innerPrintGraph(currentState.next)
-      }
-    }
-    innerPrintGraph(initial)
   }
 
   def finalState(initial: ConcreteState, graph: Map[ConcreteState, ConcreteState]): ConcreteState = {

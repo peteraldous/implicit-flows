@@ -17,6 +17,18 @@ object AbstractAnalyzer extends App {
     def +(pair: Pair[AbstractState, Set[AbstractState]]): Result = {
       new Result(first, last, graph + pair)
     }
+
+    def printGraph: Unit = {
+      def innerPrintGraph(currentState: AbstractState, seen: Set[AbstractState] = Set.empty): Unit = {
+        if ((successorGraph isDefinedAt currentState) && !(seen contains currentState)) {
+          for (state <- successorGraph(currentState)) {
+            println(currentState + " -> " + state)
+            innerPrintGraph(state)
+          }
+        }
+      }
+      innerPrintGraph(initialState)
+    }
   }
 
   def setup(sourceCode: String): AbstractState = {
@@ -27,7 +39,7 @@ object AbstractAnalyzer extends App {
     val firstState = setup(sourceCode)
     explore(firstState)
   }
-  
+
   def explore(state: AbstractState): Result = {
     explore(List(state), new Result(state))
   }
@@ -48,18 +60,6 @@ object AbstractAnalyzer extends App {
         }
       }
     }
-  }
-
-  def printGraph(initial: AbstractState, graph: Map[AbstractState, Set[AbstractState]]): Unit = {
-    def innerPrintGraph(currentState: AbstractState): Unit = {
-      if (!currentState.isEnd) {
-        for (state <- currentState.next) {
-          println(currentState + " -> " + state)
-          innerPrintGraph(state)
-        }
-      }
-    }
-    innerPrintGraph(initial)
   }
 
   val sourceCodeReader = new BufferedReader(new InputStreamReader(System.in))
