@@ -41,7 +41,7 @@ class Program(s: List[Statement]) {
 
   def firstState: ConcreteState = {
     // I should probably make this configurable, but x has the value of 2 and is tainted
-    new ConcreteState(this)(statements, Map(Pair(Variable("x"), Value(2))), Map(Pair(Variable("x"), true)), Set.empty)
+    ConcreteState(this, statements, Map(Pair(Variable("x"), Value(2))), Map(Pair(Variable("x"), true)), Set.empty)
   }
 
   val statements = s
