@@ -99,7 +99,7 @@ class AbstractProgram(s: List[AbstractStatement]) {
 
   def firstState: AbstractState = {
     // I should probably make this configurable, but x has the value of 2 and is tainted
-    new AbstractState(this)(statements, Map(Pair(AbstractVariable("x"), p)), Map(Pair(AbstractVariable("x"), true)), Set.empty)
+    AbstractState(this, statements, Map(Pair(AbstractVariable("x"), p)), Map(Pair(AbstractVariable("x"), true)), Set.empty)
   }
 
   val statements = s

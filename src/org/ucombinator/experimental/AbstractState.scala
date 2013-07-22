@@ -1,12 +1,6 @@
 package org.ucombinator.experimental
 
-// TODO consider making this a case class
-class AbstractState(prog: AbstractProgram)(s: List[AbstractStatement], rho: Map[AbstractVariable, AbstractValue], t: Map[AbstractVariable, Boolean], ct: Set[List[AbstractStatement]]) {
-  val statements = s
-  val env = rho
-  val taintedVars = t
-  val contextTaint = ct
-  val program = prog
+case class AbstractState(program: AbstractProgram, statements: List[AbstractStatement], env: Map[AbstractVariable, AbstractValue], taintedVars: Map[AbstractVariable, Boolean], contextTaint: Set[List[AbstractStatement]]) {
 
   override def toString = "(" + statements + ", " + env + ", " + taintedVars + ", " + contextTaint + ")"
 
@@ -14,45 +8,38 @@ class AbstractState(prog: AbstractProgram)(s: List[AbstractStatement], rho: Map[
     if (isEnd) {
       scala.sys.error("next: should be unreachable")
     } else {
-      val ctPrime = ct.filter((source) => program.influence(source).contains(s))
-      s.head match {
-        case AbstractLabelStatement(id, l) => Set(new AbstractState(program)(s.tail, env, t, ctPrime))
-        case AbstractGotoStatement(id, l) => Set(new AbstractState(program)(program.lookup(l), env, t, ctPrime))
+      val ctPrime = contextTaint.filter((source) => program.influence(source).contains(statements))
+      statements.head match {
+        case AbstractLabelStatement(id, l) => Set(AbstractState(program, statements.tail, env, taintedVars, ctPrime))
+        case AbstractGotoStatement(id, l) => Set(AbstractState(program, program.lookup(l), env, taintedVars, ctPrime))
 
         case AbstractAssignmentStatement(id, v, e) => {
           val envPrime = env + Pair(v, program.eval(e, env))
-          val tPrime = t + Pair(v, program.tainted(e, t) || !(ct.isEmpty))
-          Set(new AbstractState(program)(s.tail, envPrime, tPrime, ctPrime))
+          val tPrime = taintedVars + Pair(v, program.tainted(e, taintedVars) || !(contextTaint.isEmpty))
+          Set(AbstractState(program, statements.tail, envPrime, tPrime, ctPrime))
         }
 
         case AbstractIfStatement(id, e, l) => {
           val condResult = program.eval(e, env)
-          val statementListSet = Set(s)
-          val fallThrough = if (AbstractValues.zero.contains(condResult)) Set(s.tail) else statementListSet.empty
+          val statementListSet = Set(statements)
+          val fallThrough = if (AbstractValues.zero.contains(condResult)) Set(statements.tail) else statementListSet.empty
           val jump = if (AbstractValues.positive.contains(condResult)) Set(program.lookup(l)) else statementListSet.empty
           val sPrimes = fallThrough | jump
-          val ctPrimePrime = if (program.tainted(e, t)) {
+          val ctPrimePrime = if (program.tainted(e, taintedVars)) {
             ctPrime + program.conditionals(id)
           } else {
             ctPrime
           }
           val stateSet = Set(this)
-          sPrimes.foldLeft(stateSet.empty)((states, sPrime) => states + new AbstractState(program)(sPrime, env, t, ctPrimePrime))
+          sPrimes.foldLeft(stateSet.empty)((states, sPrime) => states + AbstractState(program, sPrime, env, taintedVars, ctPrimePrime))
         }
 
-        case _ => throw new IllegalStateException("next: unknown statement: " + s.head)
+        case _ => throw new IllegalStateException("next: unknown statement: " + statements.head)
       }
     }
   }
 
-  override def equals(obj: Any): Boolean = {
-    obj match {
-      case as: AbstractState => (program equals as.program) && (statements equals as.statements) && (env equals as.env) && (taintedVars equals as.taintedVars) && (contextTaint equals as.contextTaint)
-      case _ => false
-    }
-  }
-
-  def isEnd: Boolean = s.isEmpty
+  def isEnd: Boolean = statements.isEmpty
 
 }
 
