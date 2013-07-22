@@ -65,12 +65,6 @@ case class IfStatement(ln: Int, condition: Expression, l: Label) extends Stateme
   override def abstractMe: AbstractIfStatement = AbstractIfStatement(ln, condition.abstractMe, l)
 }
 
-object TypeManager {
-  def abstractStmt(stmt: Statement): AbstractStatement = {
-    stmt.abstractMe
-  }
-}
-
 abstract class AbstractStatement(ln: Int)
 case class AbstractLabelStatement(ln: Int, l: Label) extends AbstractStatement(ln: Int)
 case class AbstractAssignmentStatement(ln: Int, v: AbstractVariable, e: AbstractExpression) extends AbstractStatement(ln: Int)

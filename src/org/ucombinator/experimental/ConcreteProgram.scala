@@ -81,7 +81,7 @@ class Program(s: List[Statement]) {
     (succs map descendants).fold(succs)((set1, set2) => set1 | set2)
   }
 
-  def hcd(sources: Set[List[Statement]]): List[Statement] = {
+  def highestCommonDescendant(sources: Set[List[Statement]]): List[Statement] = {
     val commonDescendants = (sources map descendants).foldLeft(allStatementLists)((set1, set2) => set1 & set2)
     def firstSuffixMatch(lst: List[Statement]): Option[List[Statement]] = {
       if (commonDescendants.contains(lst)) {
@@ -139,7 +139,7 @@ class Program(s: List[Statement]) {
 
   def influence(s: List[Statement]): Set[List[Statement]] = {
     def innerInfl(sources: Set[List[Statement]], soFar: Set[List[Statement]]): Set[List[Statement]] = {
-      val sourceHCD = hcd(sources)
+      val sourceHCD = highestCommonDescendant(sources)
       val (clearPaths, condPaths) = sources.partition((source) => firstCond(source, sourceHCD).isEmpty)
       if (condPaths.isEmpty)
         clearPaths.map(path(sourceHCD)).foldLeft(soFar)((set, list) => set | list.toSet)

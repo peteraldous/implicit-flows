@@ -34,10 +34,10 @@ class AbstractProgram(s: List[AbstractStatement]) {
       case (lhs, rhs) if ((AbstractValues.positive.contains(rhs) && AbstractValues.negative.contains(lhs)) ||
         (AbstractValues.negative.contains(rhs) && AbstractValues.positive.contains(lhs))) => nzp
       // 16 cases - 45 total
-      case (`nz`, `n`) => nz // 46 total
-      case (`n`, `nz`) => nz // 47 total
-      case (`zp`, `p`) => zp // 48 total
-      case (`p`, `zp`) => zp // 49 total
+      case (`nz`, `n`) => n // 46 total
+      case (`n`, `nz`) => n // 47 total
+      case (`zp`, `p`) => p // 48 total
+      case (`p`, `zp`) => p // 49 total
     }
   }
 
@@ -144,7 +144,7 @@ class AbstractProgram(s: List[AbstractStatement]) {
     (succs map descendants).fold(succs)((set1, set2) => set1 | set2)
   }
 
-  def hcd(sources: Set[List[AbstractStatement]]): List[AbstractStatement] = {
+  def highestCommonDescendant(sources: Set[List[AbstractStatement]]): List[AbstractStatement] = {
     val commonDescendants = (sources map descendants).foldLeft(allStatementLists)((set1, set2) => set1 & set2)
     def firstSuffixMatch(lst: List[AbstractStatement]): Option[List[AbstractStatement]] = {
       if (commonDescendants.contains(lst)) {
@@ -202,7 +202,7 @@ class AbstractProgram(s: List[AbstractStatement]) {
 
   def influence(s: List[AbstractStatement]): Set[List[AbstractStatement]] = {
     def innerInfl(sources: Set[List[AbstractStatement]], soFar: Set[List[AbstractStatement]]): Set[List[AbstractStatement]] = {
-      val sourceHCD = hcd(sources)
+      val sourceHCD = highestCommonDescendant(sources)
       val (clearPaths, condPaths) = sources.partition((source) => firstCond(source, sourceHCD).isEmpty)
       if (condPaths.isEmpty)
         clearPaths.map(path(sourceHCD)).foldLeft(soFar)((set, list) => set | list.toSet)

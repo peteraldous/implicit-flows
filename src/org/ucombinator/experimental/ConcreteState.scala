@@ -9,7 +9,7 @@ class ConcreteState(program: Program)(s: List[Statement], rho: Map[Variable, Val
   override def toString = "(" + statements + ", " + env + ", " + taintedVars + ", " + contextTaint + ")"
 
   def next: ConcreteState = {
-    if (s.isEmpty) {
+    if (isEnd) {
       scala.sys.error("next: should be unreachable")
     } else {
       val ctPrime = ct.filter((source) => program.influence(source).contains(s))
@@ -18,9 +18,9 @@ class ConcreteState(program: Program)(s: List[Statement], rho: Map[Variable, Val
         case GotoStatement(id, l) => new ConcreteState(program)(program.lookup(l), env, t, ctPrime)
 
         case AssignmentStatement(id, v, e) => {
-          val pPrime = env + Pair(v, program.eval(e, env))
+          val envPrime = env + Pair(v, program.eval(e, env))
           val tPrime = t + Pair(v, program.tainted(e, t) || !(ct.isEmpty))
-          new ConcreteState(program)(s.tail, pPrime, tPrime, ctPrime)
+          new ConcreteState(program)(s.tail, envPrime, tPrime, ctPrime)
         }
 
         case IfStatement(id, e, l) => {
@@ -41,10 +41,6 @@ class ConcreteState(program: Program)(s: List[Statement], rho: Map[Variable, Val
       }
     }
   }
-
-  //  def abstractMe: AbstractState = {
-  // 
-  //  }
 
   def isEnd: Boolean = s.isEmpty
 }

@@ -1,5 +1,6 @@
 package org.ucombinator.experimental
 
+// TODO consider making this a case class
 class AbstractState(prog: AbstractProgram)(s: List[AbstractStatement], rho: Map[AbstractVariable, AbstractValue], t: Map[AbstractVariable, Boolean], ct: Set[List[AbstractStatement]]) {
   val statements = s
   val env = rho
@@ -10,7 +11,7 @@ class AbstractState(prog: AbstractProgram)(s: List[AbstractStatement], rho: Map[
   override def toString = "(" + statements + ", " + env + ", " + taintedVars + ", " + contextTaint + ")"
 
   def next: Set[AbstractState] = {
-    if (s.isEmpty) {
+    if (isEnd) {
       scala.sys.error("next: should be unreachable")
     } else {
       val ctPrime = ct.filter((source) => program.influence(source).contains(s))
@@ -44,12 +45,6 @@ class AbstractState(prog: AbstractProgram)(s: List[AbstractStatement], rho: Map[
     }
   }
 
-  /*
-   *   val statements = s
-  val env = rho
-  val taintedVars = t
-  val contextTaint = ct
-   */
   override def equals(obj: Any): Boolean = {
     obj match {
       case as: AbstractState => (program equals as.program) && (statements equals as.statements) && (env equals as.env) && (taintedVars equals as.taintedVars) && (contextTaint equals as.contextTaint)

@@ -2,6 +2,7 @@ package org.ucombinator.experimental
 
 import java.io.BufferedReader
 import java.io.InputStreamReader
+import scala.io.Source
 
 object AbstractAnalyzer extends App {
 
@@ -18,6 +19,7 @@ object AbstractAnalyzer extends App {
       new Result(first, last, graph + pair)
     }
 
+    // TODO consider printing in dot format
     def printGraph: Unit = {
       def innerPrintGraph(currentState: AbstractState, seen: Set[AbstractState] = Set.empty): Unit = {
         if ((successorGraph isDefinedAt currentState) && !(seen contains currentState)) {
@@ -32,7 +34,7 @@ object AbstractAnalyzer extends App {
   }
 
   def setup(sourceCode: String): AbstractState = {
-    new AbstractProgram(ToyParser.applyStmts(sourceCode, 0) map TypeManager.abstractStmt).firstState
+    new AbstractProgram(ToyParser.applyStmts(sourceCode, 0) map { _.abstractMe }).firstState
   }
 
   def analyze(sourceCode: String): Result = {
@@ -62,19 +64,6 @@ object AbstractAnalyzer extends App {
     }
   }
 
-  val sourceCodeReader = new BufferedReader(new InputStreamReader(System.in))
-  val sourceCodeBuilder = new StringBuilder()
-  def readALine(reader: BufferedReader, builder: StringBuilder): Boolean = {
-    val line = reader.readLine()
-    if (line != null) {
-      builder.append(line)
-      true
-    } else {
-      false
-    }
-  }
-  while (readALine(sourceCodeReader, sourceCodeBuilder)) {}
-
-  analyze(sourceCodeBuilder.mkString)
+  analyze(Source.fromInputStream(System.in).getLines.mkString)
 
 }
