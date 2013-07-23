@@ -51,22 +51,37 @@ object AbstractValues {
 
 abstract class Statement(ln: Int) {
   def abstractMe: AbstractStatement
+  override def toString: String
 }
 case class LabelStatement(ln: Int, l: Label) extends Statement(ln: Int) {
   override def abstractMe: AbstractLabelStatement = AbstractLabelStatement(ln, l)
+  override def toString: String = "\"(Label " + l + ")\""
 }
 case class AssignmentStatement(ln: Int, v: Variable, e: Expression) extends Statement(ln: Int) {
   override def abstractMe: AbstractAssignmentStatement = AbstractAssignmentStatement(ln, v.abstractMe, e.abstractMe)
+  override def toString: String = "\"(:= " + v + e + ")\""
 }
 case class GotoStatement(ln: Int, l: Label) extends Statement(ln: Int) {
   override def abstractMe: AbstractGotoStatement = AbstractGotoStatement(ln, l)
+  override def toString: String = "\"(Goto " + l + ")\""
 }
 case class IfStatement(ln: Int, condition: Expression, l: Label) extends Statement(ln: Int) {
   override def abstractMe: AbstractIfStatement = AbstractIfStatement(ln, condition.abstractMe, l)
+  override def toString: String = "\"(If " + condition + l + ")\""
 }
 
-abstract class AbstractStatement(ln: Int)
-case class AbstractLabelStatement(ln: Int, l: Label) extends AbstractStatement(ln: Int)
-case class AbstractAssignmentStatement(ln: Int, v: AbstractVariable, e: AbstractExpression) extends AbstractStatement(ln: Int)
-case class AbstractGotoStatement(ln: Int, l: Label) extends AbstractStatement(ln: Int)
-case class AbstractIfStatement(ln: Int, condition: AbstractExpression, l: Label) extends AbstractStatement(ln: Int)
+abstract class AbstractStatement(ln: Int) {
+  override def toString: String
+}
+case class AbstractLabelStatement(ln: Int, l: Label) extends AbstractStatement(ln: Int) {
+  override def toString: String = "\"(Label " + l + ")\""
+}
+case class AbstractAssignmentStatement(ln: Int, v: AbstractVariable, e: AbstractExpression) extends AbstractStatement(ln: Int) {
+  override def toString: String = "\"(:= " + v + e + ")\""
+}
+case class AbstractGotoStatement(ln: Int, l: Label) extends AbstractStatement(ln: Int) {
+  override def toString: String = "\"(Goto " + l + ")\""
+}
+case class AbstractIfStatement(ln: Int, condition: AbstractExpression, l: Label) extends AbstractStatement(ln: Int) {
+  override def toString: String = "\"(If " + condition + l + ")\""
+}

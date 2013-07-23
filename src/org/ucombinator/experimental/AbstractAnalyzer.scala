@@ -19,8 +19,8 @@ object AbstractAnalyzer extends App {
       new Result(first, last, graph + pair)
     }
 
-    // TODO consider printing in dot format
     def printGraph: Unit = {
+      println("digraph successorGraph {")
       def innerPrintGraph(currentState: AbstractState, seen: Set[AbstractState] = Set.empty): Unit = {
         if ((successorGraph isDefinedAt currentState) && !(seen contains currentState)) {
           for (state <- successorGraph(currentState)) {
@@ -30,6 +30,7 @@ object AbstractAnalyzer extends App {
         }
       }
       innerPrintGraph(initialState)
+      println("}")
     }
   }
 

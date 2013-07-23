@@ -2,7 +2,7 @@ package org.ucombinator.experimental
 
 case class ConcreteState(program: Program, statements: List[Statement], env: Map[Variable, Value], taintedVars: Map[Variable, Boolean], contextTaint: Set[List[Statement]]) {
 
-  override def toString = "(" + statements + ", " + env + ", " + taintedVars + ", " + contextTaint + ")"
+  override def toString = statements.head.toString
 
   def next: ConcreteState = {
     if (isEnd) {

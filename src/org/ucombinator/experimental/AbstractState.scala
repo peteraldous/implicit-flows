@@ -2,7 +2,7 @@ package org.ucombinator.experimental
 
 case class AbstractState(program: AbstractProgram, statements: List[AbstractStatement], env: Map[AbstractVariable, AbstractValue], taintedVars: Map[AbstractVariable, Boolean], contextTaint: Set[List[AbstractStatement]]) {
 
-  override def toString = "(" + statements + ", " + env + ", " + taintedVars + ", " + contextTaint + ")"
+  override def toString = statements.head.toString
 
   def next: Set[AbstractState] = {
     if (isEnd) {

@@ -15,6 +15,7 @@ object ConcreteAnalyzer extends App {
     def +(pair: Pair[ConcreteState, ConcreteState]): Result = new Result(initialState, finalState, successorGraph + pair)
 
     def printGraph: Unit = {
+      println("digraph successorGraph {")
       def innerPrintGraph(currentState: ConcreteState, seen: Set[ConcreteState] = Set.empty): Unit = {
         if (!(seen contains currentState) && (successorGraph isDefinedAt currentState)) {
           val next = successorGraph(currentState)
@@ -23,6 +24,7 @@ object ConcreteAnalyzer extends App {
         }
       }
       innerPrintGraph(initialState)
+      println("}")
     }
   }
 
