@@ -31,17 +31,15 @@ object ToyParser extends RegexParsers {
     case failure: NoSuccess => scala.sys.error(failure.msg)
   }
 
-  def applyStmts(input: String, ln: Int): List[Statement] = {
-    def processParseResult(result: ParseResult[Statement]): List[Statement] = {
-      result match {
-        case Success(result, remainder) => result :: innerApplyStmts(remainder, ln + 1)
-        case failure: NoSuccess => scala.sys.error(failure.msg)
-      }
+  def applyStmts(input: String, ln: Int = 0): List[Statement] = {
+    def processParseResult(result: ParseResult[Statement], ln: Int): List[Statement] = result match {
+      case Success(result, remainder) => result :: innerApplyStmts(remainder, ln + 1)
+      case failure: NoSuccess => scala.sys.error(failure.msg)
     }
     def innerApplyStmts(input: Input, ln: Int): List[Statement] = {
-      if (input.atEnd) List.empty else processParseResult(parse(stmt(ln), input))
+      if (input.atEnd) List.empty else processParseResult(parse(stmt(ln), input), ln)
     }
-    processParseResult(parse(stmt(ln), input))
+    processParseResult(parse(stmt(ln), input), ln)
   }
 
   def applyExpr(input: String): Expression = parseAll(expr, input) match {

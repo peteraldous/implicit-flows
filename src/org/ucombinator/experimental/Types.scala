@@ -51,23 +51,23 @@ object AbstractValues {
 
 abstract class Statement(ln: Int) {
   def abstractMe: AbstractStatement
-  override def toString: String
+  override def toString: String = "[" + ln + "]"
 }
 case class LabelStatement(ln: Int, l: Label) extends Statement(ln: Int) {
   override def abstractMe: AbstractLabelStatement = AbstractLabelStatement(ln, l)
-  override def toString: String = "\"(Label " + l + ")\""
+  override def toString: String = super.toString + "\"(Label " + l + ")\""
 }
 case class AssignmentStatement(ln: Int, v: Variable, e: Expression) extends Statement(ln: Int) {
   override def abstractMe: AbstractAssignmentStatement = AbstractAssignmentStatement(ln, v.abstractMe, e.abstractMe)
-  override def toString: String = "\"(:= " + v + e + ")\""
+  override def toString: String = super.toString + "\"(:= " + v + e + ")\""
 }
 case class GotoStatement(ln: Int, l: Label) extends Statement(ln: Int) {
   override def abstractMe: AbstractGotoStatement = AbstractGotoStatement(ln, l)
-  override def toString: String = "\"(Goto " + l + ")\""
+  override def toString: String = super.toString + "\"(Goto " + l + ")\""
 }
 case class IfStatement(ln: Int, condition: Expression, l: Label) extends Statement(ln: Int) {
   override def abstractMe: AbstractIfStatement = AbstractIfStatement(ln, condition.abstractMe, l)
-  override def toString: String = "\"(If " + condition + l + ")\""
+  override def toString: String = super.toString + "\"(If " + condition + l + ")\""
 }
 
 abstract class AbstractStatement(ln: Int) {
