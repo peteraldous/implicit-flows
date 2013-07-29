@@ -39,12 +39,12 @@ class Program(s: List[Statement]) {
     case _ => throw new IllegalStateException("eval: Could not match expression: " + e)
   }
 
-  def firstCond(start: Int, end: Int): Int = {
-    if (start == lastLineNumber || start == end) lastLineNumber else {
+  def firstCond(start: Int): Int = {
+    if (start == lastLineNumber) lastLineNumber else {
       statementTable(start).head match {
-        case (_: LabelStatement) => firstCond(start + 1, end)
-        case (_: AssignmentStatement) => firstCond(start + 1, end)
-        case GotoStatement(tl, l) => firstCond(lookup(l), end)
+        case (_: LabelStatement) => firstCond(start + 1)
+        case (_: AssignmentStatement) => firstCond(start + 1)
+        case GotoStatement(tl, l) => firstCond(lookup(l))
         case (s: IfStatement) => start
         case _ => throw new IllegalStateException("firstCond: Could not match statements list: " + statements)
       }
@@ -110,75 +110,65 @@ class Program(s: List[Statement]) {
     innerDescendants(s, Set.empty)
   }
 
-  def highestCommonDescendant(sources: Set[Int]): Int = {
-    val commonDescendants = (sources map descendants).foldLeft((0 to lastLineNumber).toSet)((set1, set2) => set1 & set2)
-    //    val commonDescendants = (sources map descendants).foldLeft(allStatementLists)((set1, set2) => set1 & set2)
-    def firstSuffixMatch(lst: Int): Option[Int] = {
-      if (commonDescendants.contains(lst)) {
-        Some(lst)
-      } else {
-        if (lst == lastLineNumber) {
-          None
-        } else {
-          statementTable(lst).head match {
-            case GotoStatement(ln, l) => firstSuffixMatch(lookup(l))
-            case IfStatement(ln, cond, l) => {
-              val fallThrough = firstSuffixMatch(lst + 1)
-              if (fallThrough.isEmpty) {
-                firstSuffixMatch(lookup(l))
-              } else {
-                fallThrough
-              }
-            }
-            case _ => firstSuffixMatch(lst + 1)
-          }
-        }
-      }
-    }
-    // get throws an error if there's nothing
-    firstSuffixMatch(sources.head).get
-  }
-
   /**
-   * path: finds the path beginning at start and ending at end.
+   * path: finds the path beginning at start and ending at the end of the program or at a conditional.
    *
    * The path is represented as a list of lists of Statement objects. Each list includes a Statement and all statements that
    * succeed it in the order given in the source code. The lists each represent a Statement (and its successors in source code
    * order) that would be executed if an interpreter began at start; that is, the result includes each Statement (bundled
-   * with its successors) in program order from start to end.
-   *
-   * precondition: No conditional statements may exist in program order between start and end.
+   * with its successors) in program order.
    */
-  def path(end: Int)(start: Int): List[Int] = {
-    def innerPath(start: Int, soFar: List[Int]): List[Int] = {
-      if (start == lastLineNumber)
-        throw new IllegalStateException("path: No more statements and the end has not been reached")
-      else {
-        if (start == end) soFar else {
-          val statement = statementTable(start).head
-          statement match {
-            case (s: LabelStatement) => innerPath(start + 1, start :: soFar)
-            case GotoStatement(tl, l) => innerPath(lookup(l), start :: soFar)
-            case (s: AssignmentStatement) => innerPath(start + 1, start :: soFar)
-            case (s: IfStatement) => throw new IllegalStateException("path: Conditionals are not permitted")
-            case _ => throw new IllegalStateException("path: unknown statement type")
-          }
+  def path(start: Int): Set[Int] = {
+    def innerPath(start: Int, soFar: Set[Int]): Set[Int] = {
+      if (start == lastLineNumber) soFar + start else {
+        val statement = statementTable(start).head
+        val withStart = soFar + start
+        statement match {
+          case (s: LabelStatement) => innerPath(start + 1, withStart)
+          case GotoStatement(tl, l) => innerPath(lookup(l), withStart)
+          case (s: AssignmentStatement) => innerPath(start + 1, withStart)
+          case (s: IfStatement) => withStart
+          case _ => throw new IllegalStateException("path: unknown statement type")
         }
       }
     }
-    innerPath(start, Nil)
+    innerPath(start, Set.empty)
+  }
+
+  def mustReach(s: Int, seen: Set[Int] = Set.empty): Set[Int] = {
+    if (seen contains s) {
+      System.err.println("warning: loop. Termination leaks are possible.")
+      Set.empty
+    } else {
+      if (s == lastLineNumber) Set(s) else {
+        statementTable(s).head match {
+          case as: AssignmentStatement => mustReach(s + 1) + (s + 1)
+          case ls: LabelStatement => mustReach(s + 1) + (s + 1)
+          case GotoStatement(ln, l) => mustReach(lookup(l)) + lookup(l)
+          case IfStatement(ln, cond, l) => mustReach(s + 1) & mustReach(lookup(l))
+        }
+      }
+    }
   }
 
   def influence(s: Int): Set[Int] = {
-    def innerInfl(sources: Set[Int], soFar: Set[Int]): Set[Int] = {
-      val sourceHCD = highestCommonDescendant(sources)
-      val (clearPaths, condPaths) = sources.partition((source) => firstCond(source, sourceHCD) == lastLineNumber)
-      if (condPaths == lastLineNumber)
-        clearPaths.map(path(sourceHCD)).foldLeft(soFar)((set, list) => set | list.toSet)
-      else
-        innerInfl(
-          condPaths.foldLeft(clearPaths)((accumulated, condPath) => accumulated | successors(firstCond(condPath, sourceHCD))),
-          condPaths.map((condPath) => path(firstCond(condPath, sourceHCD))(condPath)).foldLeft(soFar)((statements, thisPath) => statements | thisPath.toSet))
+    def innerInfl(sources: Set[Int], allSourcesSeen: Set[Int], soFar: Set[Int]): Set[Int] = {
+      val (clearPaths, condPaths) = sources.partition((source) => firstCond(source) == lastLineNumber)
+      if (condPaths.isEmpty) {
+        val paths = clearPaths.map(path)
+        val commonStatements = paths.foldLeft((0 to lastLineNumber).toSet)((subset, path) => subset & path)
+        paths.foldLeft(soFar)((set, path) => set | path) -- commonStatements
+      } else {
+        val unexploredCondPaths = condPaths -- soFar
+        /*
+        if (unexploredCondPaths != condPaths) {
+          println("Warning: found a loop. Termination leaks are possible.")
+        }
+        */
+        val nextSources = unexploredCondPaths.foldLeft(clearPaths)((accumulated, condPath) => accumulated | successors(firstCond(condPath)))
+        val statementsSeen = condPaths.map(path).foldLeft(soFar)((statements, thisPath) => statements | thisPath)
+        innerInfl(nextSources, statementsSeen)
+      }
     }
     statementTable(s).head match {
       case i: IfStatement => innerInfl(successors(s), Set.empty)

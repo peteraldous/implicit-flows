@@ -13,7 +13,8 @@ object ConcreteTester extends Tester {
     arithmetic
     firstCond
     descendants
-    //    implicitFlow
+    path
+    implicitFlow
     influence
     loop
   }
@@ -66,20 +67,36 @@ object ConcreteTester extends Tester {
     val code = "(:= y x)(:= z 1)(label _begin)(if (= x 1) _f)(:= z (+ z 1))(goto _end)(label _f)(:= z 0)(label _end)(if (= z 1) _begin)(:= y 2)"
     val program = new Program(ToyParser.applyStmts(code))
 
-    test(program.firstCond(0, 11) == 3, "internals: firstCond(0) == 3")
-    test(program.firstCond(1, 11) == 3, "internals: firstCond(1) == 3")
-    test(program.firstCond(2, 11) == 3, "internals: firstCond(2) == 3")
-    test(program.firstCond(3, 11) == 3, "internals: firstCond(3) == 3")
-    test(program.firstCond(4, 11) == 9, "internals: firstCond(4) == 9")
-    test(program.firstCond(5, 11) == 9, "internals: firstCond(5) == 9")
-    test(program.firstCond(6, 11) == 9, "internals: firstCond(6) == 9")
-    test(program.firstCond(7, 11) == 9, "internals: firstCond(7) == 9")
-    test(program.firstCond(8, 11) == 9, "internals: firstCond(8) == 9")
-    test(program.firstCond(9, 11) == 9, "internals: firstCond(9) == 9")
-    test(program.firstCond(10, 11) == 11, "internals: firstCond(10) == 11")
-    test(program.firstCond(11, 11) == 11, "internals: firstCond(11) == 11")
-    test(program.firstCond(0, 2) == 11, "internals: firstCond stops early")
-    test(program.firstCond(1, 6) == 3, "internals: firstCond uses end properly")
+    test(program.firstCond(0) == 3, "internals: firstCond(0) == 3")
+    test(program.firstCond(1) == 3, "internals: firstCond(1) == 3")
+    test(program.firstCond(2) == 3, "internals: firstCond(2) == 3")
+    test(program.firstCond(3) == 3, "internals: firstCond(3) == 3")
+    test(program.firstCond(4) == 9, "internals: firstCond(4) == 9")
+    test(program.firstCond(5) == 9, "internals: firstCond(5) == 9")
+    test(program.firstCond(6) == 9, "internals: firstCond(6) == 9")
+    test(program.firstCond(7) == 9, "internals: firstCond(7) == 9")
+    test(program.firstCond(8) == 9, "internals: firstCond(8) == 9")
+    test(program.firstCond(9) == 9, "internals: firstCond(9) == 9")
+    test(program.firstCond(10) == 11, "internals: firstCond(10) == 11")
+    test(program.firstCond(11) == 11, "internals: firstCond(11) == 11")
+  }
+
+  private def path: Unit = {
+    val code = "(:= y x)(:= z 1)(label _begin)(if (= x 1) _f)(:= z (+ z 1))(goto _end)(label _f)(:= z 0)(label _end)(if (= z 1) _begin)(:= y 2)"
+    val program = new Program(ToyParser.applyStmts(code))
+
+    test(program.path(0) == Set(0, 1, 2, 3), "path(0)")
+    test(program.path(1) == Set(1, 2, 3), "path(1)")
+    test(program.path(2) == Set(2, 3), "path(2)")
+    test(program.path(3) == Set(3), "path(3)")
+    test(program.path(4) == Set(4, 5, 8, 9), "path(4)")
+    test(program.path(5) == Set(5, 8, 9), "path(5)")
+    test(program.path(6) == Set(6, 7, 8, 9), "path(6)")
+    test(program.path(7) == Set(7, 8, 9), "path(7)")
+    test(program.path(8) == Set(8, 9), "path(8)")
+    test(program.path(9) == Set(9), "path(9)")
+    test(program.path(10) == Set(10, 11), "path(10)")
+    test(program.path(11) == Set(11), "path(11)")
   }
 
   private def descendants: Unit = {
@@ -104,10 +121,11 @@ object ConcreteTester extends Tester {
     val code = "(:= y x)(:= z 1)(label _begin)(if (= x 1) _f)(:= z (+ z 1))(goto _end)(label _f)(:= z 0)(label _end)(if (= z 1) _begin)(:= y 2)"
     val program = new Program(ToyParser.applyStmts(code))
 
-    test(program.influence(0) equals Set.empty, "internals: influence of assignment is empty")
-    test(program.influence(5) equals Set.empty, "internals: influence of goto is empty")
-    test(program.influence(2) equals Set.empty, "internals: influence of label is empty")
-    test(program.influence(3) equals (2 to 5).toSet, "internals: influence of conditional")
+    test(program.influence(0) equals Set.empty, "influence of assignment is empty")
+    test(program.influence(5) equals Set.empty, "influence of goto is empty")
+    test(program.influence(2) equals Set.empty, "influence of label is empty")
+    println(program.influence(3))
+    test(program.influence(3) equals (4 to 7).toSet, "influence of conditional")
   }
 
   private def implicitFlow: Unit = {
@@ -118,9 +136,9 @@ object ConcreteTester extends Tester {
     val taintedVars = finalState.taintedVars
 
     test(finalState.contextTaint.isEmpty, "implicitFlow: no context taint")
-    test(definedAndEqual(Variable("x"), taintedVars, true), "simpleTaint: x is tainted")
-    test(definedAndEqual(Variable("y"), taintedVars, false), "simpleTaint: y is not tainted (strong update)")
-    test(definedAndEqual(Variable("z"), taintedVars, true), "simpleTaint: z is tainted (implicit flow)")
+    test(definedAndEqual(Variable("x"), taintedVars, true), "implicitFlow: x is tainted")
+    test(definedAndEqual(Variable("y"), taintedVars, false), "implicitFlow: y is not tainted (strong update)")
+    test(definedAndEqual(Variable("z"), taintedVars, true), "implicitFlow: z is tainted (implicit flow)")
   }
 
   private def loop: Unit = {
