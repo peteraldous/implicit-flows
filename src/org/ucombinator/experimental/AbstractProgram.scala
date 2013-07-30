@@ -104,7 +104,7 @@ class AbstractProgram(s: List[AbstractStatement]) {
     // I should probably make this configurable, but x has the value of 2 and is tainted
     AbstractState(this, 0, Map(Pair(AbstractVariable("x"), p)), Map(Pair(AbstractVariable("x"), true)), Set.empty)
   }
-  
+
   case class Statics(labelTable: Map[Label, Int], statementTable: Map[Int, List[AbstractStatement]], lastLineNumber: Int)
 
   val statements = s
@@ -144,7 +144,7 @@ class AbstractProgram(s: List[AbstractStatement]) {
     }
     innerGenerateTables(statements, Map.empty, Map.empty)
   }*/
-  
+
   private def generateTables(statements: List[AbstractStatement]): Statics = {
     def innerGenerateTables(statements: List[AbstractStatement], labelTable: Map[Label, Int], statementTable: Map[Int, List[AbstractStatement]], ln: Int): Statics = {
       if (statements.isEmpty)
@@ -212,7 +212,7 @@ class AbstractProgram(s: List[AbstractStatement]) {
 
   def mustReach(s: Int, seen: Set[Int] = Set.empty): Set[Int] = {
     if (seen contains s) {
-//      System.err.println("warning: loop. Termination leaks are possible.")
+      //      System.err.println("warning: loop. Termination leaks are possible.")
       Set.empty
     } else {
       if (s == lastLineNumber) Set(s) else {
@@ -235,7 +235,7 @@ class AbstractProgram(s: List[AbstractStatement]) {
       } else {
         val succs = successors(queue.head)
         if (!((succs.filter((successor) => s == successor)).isEmpty)) {
-            System.err.println("warning: loop to sensitive conditional; termination leaks are possible")
+          System.err.println("warning: loop to sensitive conditional; termination leaks are possible")
         }
         val nextStatements = succs filter ((successor) => !(seenSources contains successor) && successor != s && !(must_reach contains successor))
         innerInfluence(queue.tail ++ nextStatements, seenSources ++ nextStatements)

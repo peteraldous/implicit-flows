@@ -10,19 +10,19 @@ case class AbstractState(program: AbstractProgram, statements: Int, env: Map[Abs
     } else {
       val ctPrime = contextTaint.filter((source) => program.influence(source).contains(statements))
       program.statementTable(statements).head match {
-        case AbstractLabelStatement(id, l) => Set(AbstractState(program, statements+1, env, taintedVars, ctPrime))
+        case AbstractLabelStatement(id, l) => Set(AbstractState(program, statements + 1, env, taintedVars, ctPrime))
         case AbstractGotoStatement(id, l) => Set(AbstractState(program, program.lookup(l), env, taintedVars, ctPrime))
 
         case AbstractAssignmentStatement(id, v, e) => {
           val envPrime = env + Pair(v, program.eval(e, env))
           val tPrime = taintedVars + Pair(v, program.tainted(e, taintedVars) || !(contextTaint.isEmpty))
-          Set(AbstractState(program, statements+1, envPrime, tPrime, ctPrime))
+          Set(AbstractState(program, statements + 1, envPrime, tPrime, ctPrime))
         }
 
         case AbstractIfStatement(id, e, l) => {
           val condResult = program.eval(e, env)
           val statementListSet = Set(statements)
-          val fallThrough = if (AbstractValues.zero.contains(condResult)) Set(statements+1) else statementListSet.empty
+          val fallThrough = if (AbstractValues.zero.contains(condResult)) Set(statements + 1) else statementListSet.empty
           val jump = if (AbstractValues.positive.contains(condResult)) Set(program.lookup(l)) else statementListSet.empty
           val sPrimes = fallThrough | jump
           val ctPrimePrime = if (program.tainted(e, taintedVars)) {
