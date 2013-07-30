@@ -108,10 +108,10 @@ class AbstractProgram(s: List[AbstractStatement]) {
   case class Statics(labelTable: Map[Label, Int], statementTable: Map[Int, List[AbstractStatement]], lastLineNumber: Int)
 
   val statements = s
-  val tables = generateTables(statements)
-  val lookup = tables.labelTable
-  val statementTable = tables.statementTable
-  val lastLineNumber = tables.lastLineNumber
+  val statics = generateTables(statements)
+  val lookup = statics.labelTable
+  val statementTable = statics.statementTable
+  val lastLineNumber = statics.lastLineNumber
   val allStatementLists = {
     def allSuffixes(suffixes: Set[List[AbstractStatement]], lst: List[AbstractStatement]): Set[List[AbstractStatement]] = {
       val withThis = suffixes | Set(lst)
@@ -128,22 +128,6 @@ class AbstractProgram(s: List[AbstractStatement]) {
     case p: AbstractProgram => p.statements equals statements
     case _ => false
   }
-
-  /*private def generateTables(statements: List[AbstractStatement]): Statics = {
-    def innerGenerateTables(statements: List[AbstractStatement], labelsSoFar: Map[Label, List[AbstractStatement]], conditionalsSoFar: Map[Int, List[AbstractStatement]]): Statics = {
-      if (statements.isEmpty)
-        Statics(labelsSoFar, conditionalsSoFar, 0)
-      else {
-        val statement = statements.head
-        statement match {
-          case AbstractLabelStatement(ln, l) => innerGenerateTables(statements.tail, labelsSoFar.+((l, statements)), conditionalsSoFar)
-          case AbstractIfStatement(ln, cond, l) => innerGenerateTables(statements.tail, labelsSoFar, conditionalsSoFar.+((ln, statements)))
-          case _ => innerGenerateTables(statements.tail, labelsSoFar, conditionalsSoFar)
-        }
-      }
-    }
-    innerGenerateTables(statements, Map.empty, Map.empty)
-  }*/
 
   private def generateTables(statements: List[AbstractStatement]): Statics = {
     def innerGenerateTables(statements: List[AbstractStatement], labelTable: Map[Label, Int], statementTable: Map[Int, List[AbstractStatement]], ln: Int): Statics = {
