@@ -11,15 +11,6 @@ class Program(s: List[Statement]) {
     case _ => throw new IllegalStateException("tainted: unknown expression: " + e)
   }
 
-  def successors(statements: List[Statement]): Set[List[Statement]] = statements match {
-    case GotoStatement(tl, l) :: rest => Set(statementTable(lookup(l)))
-    case s :: Nil => Set.empty
-    case (s: LabelStatement) :: rest => Set(rest)
-    case (s: AssignmentStatement) :: rest => Set(rest)
-    case IfStatement(id, c, l) :: rest => Set(rest, statementTable(lookup(l)))
-    case _ => throw new IllegalStateException("successors: Could not match statement list: " + statements)
-  }
-
   def successors(ln: Int): Set[Int] = {
     if (ln == lastLineNumber) Set.empty else statementTable(ln).head match {
       case l: LabelStatement => Set(ln + 1)
@@ -84,11 +75,6 @@ class Program(s: List[Statement]) {
     innerGenerateTables(statements, Map.empty, Map.empty, 0)
   }
 
-  def descendants(s: List[Statement]): Set[List[Statement]] = {
-    val succs = successors(s)
-    (succs map descendants).fold(succs)((set1, set2) => set1 | set2)
-  }
-
   def descendants(s: Int): Set[Int] = {
     def innerDescendants(s: Int, seen: Set[Int]): Set[Int] = {
       def ifNotSeen(s: Int, seen: Set[Int]): Set[Int] = {
@@ -135,7 +121,6 @@ class Program(s: List[Statement]) {
     innerPath(start, Set.empty)
   }
 
-  // infinite looping
   def mustReach(s: Int, seen: Set[Int] = Set.empty): Set[Int] = {
     if (seen contains s) {
 //      System.err.println("warning: loop. Termination leaks are possible.")

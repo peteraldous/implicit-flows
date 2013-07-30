@@ -11,13 +11,14 @@ class AbstractProgram(s: List[AbstractStatement]) {
     case _ => throw new IllegalStateException("tainted: unknown expression: " + e)
   }
 
-  def successors(statements: List[AbstractStatement]): Set[List[AbstractStatement]] = statements match {
-    case AbstractGotoStatement(tl, l) :: rest => Set(lookup(l))
-    case s :: Nil => Set.empty
-    case (s: AbstractLabelStatement) :: rest => Set(rest)
-    case (s: AbstractAssignmentStatement) :: rest => Set(rest)
-    case AbstractIfStatement(id, c, l) :: rest => Set(rest, lookup(l))
-    case _ => throw new IllegalStateException("successors: Could not match statement list: " + statements)
+  def successors(ln: Int): Set[Int] = {
+    if (ln == lastLineNumber) Set.empty else statementTable(ln).head match {
+      case l: AbstractLabelStatement => Set(ln + 1)
+      case a: AbstractAssignmentStatement => Set(ln + 1)
+      case AbstractGotoStatement(ln, l) => Set(lookup(l))
+      case AbstractIfStatement(ln, e, l) => Set(lookup(l), ln + 1)
+      case _ => scala.sys.error("successors: unknown statement type")
+    }
   }
 
   def abstractAdd(lhs: AbstractValue, rhs: AbstractValue): AbstractValue = {
@@ -87,25 +88,30 @@ class AbstractProgram(s: List[AbstractStatement]) {
     case _ => throw new IllegalStateException("eval: Could not match expression: " + e)
   }
 
-  def firstCond(statements: List[AbstractStatement], end: List[AbstractStatement]): List[AbstractStatement] = statements match {
-    case Nil => List.empty
-    case `end` => List.empty
-    case (_: AbstractLabelStatement) :: rest => firstCond(rest, end)
-    case (_: AbstractAssignmentStatement) :: rest => firstCond(rest, end)
-    case AbstractGotoStatement(tl, l) :: rest => firstCond(lookup(l), end)
-    case (s: AbstractIfStatement) :: rest => s :: rest
-    case _ => throw new IllegalStateException("firstCond: Could not match statements list: " + statements)
+  def firstCond(start: Int): Int = {
+    if (start == lastLineNumber) lastLineNumber else {
+      statementTable(start).head match {
+        case (_: AbstractLabelStatement) => firstCond(start + 1)
+        case (_: AbstractAssignmentStatement) => firstCond(start + 1)
+        case AbstractGotoStatement(tl, l) => firstCond(lookup(l))
+        case (s: AbstractIfStatement) => start
+        case _ => throw new IllegalStateException("firstCond: Could not match statements list: " + statements)
+      }
+    }
   }
 
   def firstState: AbstractState = {
     // I should probably make this configurable, but x has the value of 2 and is tainted
-    AbstractState(this, statements, Map(Pair(AbstractVariable("x"), p)), Map(Pair(AbstractVariable("x"), true)), Set.empty)
+    AbstractState(this, 0, Map(Pair(AbstractVariable("x"), p)), Map(Pair(AbstractVariable("x"), true)), Set.empty)
   }
+  
+  case class Statics(labelTable: Map[Label, Int], statementTable: Map[Int, List[AbstractStatement]], lastLineNumber: Int)
 
   val statements = s
   val tables = generateTables(statements)
-  val lookup = tables._1
-  val conditionals = tables._2
+  val lookup = tables.labelTable
+  val statementTable = tables.statementTable
+  val lastLineNumber = tables.lastLineNumber
   val allStatementLists = {
     def allSuffixes(suffixes: Set[List[AbstractStatement]], lst: List[AbstractStatement]): Set[List[AbstractStatement]] = {
       val withThis = suffixes | Set(lst)
@@ -123,10 +129,10 @@ class AbstractProgram(s: List[AbstractStatement]) {
     case _ => false
   }
 
-  private def generateTables(statements: List[AbstractStatement]): Pair[Map[Label, List[AbstractStatement]], Map[Int, List[AbstractStatement]]] = {
-    def innerGenerateTables(statements: List[AbstractStatement], labelsSoFar: Map[Label, List[AbstractStatement]], conditionalsSoFar: Map[Int, List[AbstractStatement]]): Pair[Map[Label, List[AbstractStatement]], Map[Int, List[AbstractStatement]]] = {
+  /*private def generateTables(statements: List[AbstractStatement]): Statics = {
+    def innerGenerateTables(statements: List[AbstractStatement], labelsSoFar: Map[Label, List[AbstractStatement]], conditionalsSoFar: Map[Int, List[AbstractStatement]]): Statics = {
       if (statements.isEmpty)
-        (labelsSoFar, conditionalsSoFar)
+        Statics(labelsSoFar, conditionalsSoFar, 0)
       else {
         val statement = statements.head
         statement match {
@@ -137,82 +143,106 @@ class AbstractProgram(s: List[AbstractStatement]) {
       }
     }
     innerGenerateTables(statements, Map.empty, Map.empty)
-  }
-
-  def descendants(s: List[AbstractStatement]): Set[List[AbstractStatement]] = {
-    val succs = successors(s)
-    (succs map descendants).fold(succs)((set1, set2) => set1 | set2)
-  }
-
-  def highestCommonDescendant(sources: Set[List[AbstractStatement]]): List[AbstractStatement] = {
-    val commonDescendants = (sources map descendants).foldLeft(allStatementLists)((set1, set2) => set1 & set2)
-    def firstSuffixMatch(lst: List[AbstractStatement]): Option[List[AbstractStatement]] = {
-      if (commonDescendants.contains(lst)) {
-        Some(lst)
-      } else {
-        if (lst.isEmpty) {
-          None
-        } else {
-          lst.head match {
-            case AbstractGotoStatement(ln, l) => firstSuffixMatch(lookup(l))
-            case AbstractIfStatement(ln, cond, l) => {
-              val fallThrough = firstSuffixMatch(lst.tail)
-              if (fallThrough.isEmpty) {
-                firstSuffixMatch(lookup(l))
-              } else {
-                fallThrough
-              }
-            }
-            case _ => firstSuffixMatch(lst.tail)
-          }
+  }*/
+  
+  private def generateTables(statements: List[AbstractStatement]): Statics = {
+    def innerGenerateTables(statements: List[AbstractStatement], labelTable: Map[Label, Int], statementTable: Map[Int, List[AbstractStatement]], ln: Int): Statics = {
+      if (statements.isEmpty)
+        Statics(labelTable, statementTable, ln)
+      else {
+        val statement = statements.head
+        val next = statements.tail
+        statement match {
+          case AbstractLabelStatement(ln, l) => innerGenerateTables(next, labelTable + Pair(l, ln), statementTable + Pair(ln, statements), ln + 1)
+          case AbstractIfStatement(ln, cond, l) => innerGenerateTables(next, labelTable, statementTable + Pair(ln, statements), ln + 1)
+          case AbstractGotoStatement(ln, l) => innerGenerateTables(next, labelTable, statementTable + Pair(ln, statements), ln + 1)
+          case AbstractAssignmentStatement(ln, v, e) => innerGenerateTables(next, labelTable, statementTable + Pair(ln, statements), ln + 1)
+          case _ => scala.sys.error("generateTables: unknown Statement type")
         }
       }
     }
-    // get throws an error if there's nothing
-    firstSuffixMatch(sources.head).get
+    innerGenerateTables(statements, Map.empty, Map.empty, 0)
+  }
+
+  def descendants(s: Int): Set[Int] = {
+    def innerDescendants(s: Int, seen: Set[Int]): Set[Int] = {
+      def ifNotSeen(s: Int, seen: Set[Int]): Set[Int] = {
+        if (seen contains s) {
+          Set.empty
+        } else {
+          innerDescendants(s, seen) + s
+        }
+      }
+      if (s == lastLineNumber) Set.empty else {
+        val succs = successors(s)
+        if (succs.size == 1) {
+          ifNotSeen(succs.head, seen + s)
+        } else {
+          ifNotSeen(succs.head, seen + s) | ifNotSeen(succs.tail.head, seen + s)
+        }
+      }
+    }
+    innerDescendants(s, Set.empty)
   }
 
   /**
-   * path: finds the path beginning at start and ending at end.
+   * path: finds the path beginning at start and ending at the end of the program or at a conditional.
    *
    * The path is represented as a list of lists of Statement objects. Each list includes a Statement and all statements that
    * succeed it in the order given in the source code. The lists each represent a Statement (and its successors in source code
    * order) that would be executed if an interpreter began at start; that is, the result includes each Statement (bundled
-   * with its successors) in program order from start to end.
-   *
-   * precondition: No conditional statements may exist in program order between start and end.
+   * with its successors) in program order.
    */
-  def path(end: List[AbstractStatement])(start: List[AbstractStatement]): List[List[AbstractStatement]] = {
-    def innerPath(start: List[AbstractStatement], soFar: List[List[AbstractStatement]]): List[List[AbstractStatement]] = {
-      if (start.isEmpty)
-        throw new IllegalStateException("path: No more statements and the end has not been reached")
-      else {
-        start match {
-          case `end` => soFar
-          case (s: AbstractLabelStatement) :: rest => innerPath(rest, start :: soFar)
-          case AbstractGotoStatement(tl, l) :: rest => innerPath(lookup(l), start :: soFar)
-          case (s: AbstractAssignmentStatement) :: rest => innerPath(rest, start :: soFar)
-          case (s: AbstractIfStatement) :: rest => throw new IllegalStateException("path: Conditionals are not permitted")
+  def path(start: Int): Set[Int] = {
+    def innerPath(start: Int, soFar: Set[Int]): Set[Int] = {
+      if (start == lastLineNumber) soFar + start else {
+        val statement = statementTable(start).head
+        val withStart = soFar + start
+        statement match {
+          case (s: AbstractLabelStatement) => innerPath(start + 1, withStart)
+          case AbstractGotoStatement(tl, l) => innerPath(lookup(l), withStart)
+          case (s: AbstractAssignmentStatement) => innerPath(start + 1, withStart)
+          case (s: AbstractIfStatement) => withStart
           case _ => throw new IllegalStateException("path: unknown statement type")
         }
       }
     }
-    innerPath(start, Nil)
+    innerPath(start, Set.empty)
   }
 
-  def influence(s: List[AbstractStatement]): Set[List[AbstractStatement]] = {
-    def innerInfl(sources: Set[List[AbstractStatement]], soFar: Set[List[AbstractStatement]]): Set[List[AbstractStatement]] = {
-      val sourceHCD = highestCommonDescendant(sources)
-      val (clearPaths, condPaths) = sources.partition((source) => firstCond(source, sourceHCD).isEmpty)
-      if (condPaths.isEmpty)
-        clearPaths.map(path(sourceHCD)).foldLeft(soFar)((set, list) => set | list.toSet)
-      else
-        innerInfl(
-          condPaths.foldLeft(clearPaths)((accumulated, condPath) => accumulated | successors(firstCond(condPath, sourceHCD))),
-          condPaths.map((condPath) => path(firstCond(condPath, sourceHCD))(condPath)).foldLeft(soFar)((statements, thisPath) => statements | thisPath.toSet))
+  def mustReach(s: Int, seen: Set[Int] = Set.empty): Set[Int] = {
+    if (seen contains s) {
+//      System.err.println("warning: loop. Termination leaks are possible.")
+      Set.empty
+    } else {
+      if (s == lastLineNumber) Set(s) else {
+        val nextSeen = seen + s
+        statementTable(s).head match {
+          case as: AbstractAssignmentStatement => mustReach(s + 1, nextSeen) + (s + 1)
+          case ls: AbstractLabelStatement => mustReach(s + 1, nextSeen) + (s + 1)
+          case AbstractGotoStatement(ln, l) => mustReach(lookup(l), nextSeen) + lookup(l)
+          case AbstractIfStatement(ln, cond, l) => mustReach(s + 1, nextSeen) & mustReach(lookup(l), nextSeen)
+        }
+      }
     }
-    s.head match {
-      case i: AbstractIfStatement => innerInfl(successors(s), Set.empty)
+  }
+
+  def influence(s: Int): Set[Int] = {
+    val must_reach = mustReach(s)
+    def innerInfluence(queue: List[Int], seenSources: Set[Int]): Set[Int] = {
+      if (queue isEmpty) {
+        seenSources
+      } else {
+        val succs = successors(queue.head)
+        if (!((succs.filter((successor) => s == successor)).isEmpty)) {
+            System.err.println("warning: loop to sensitive conditional; termination leaks are possible")
+        }
+        val nextStatements = succs filter ((successor) => !(seenSources contains successor) && successor != s && !(must_reach contains successor))
+        innerInfluence(queue.tail ++ nextStatements, seenSources ++ nextStatements)
+      }
+    }
+    statementTable(s).head match {
+      case i: AbstractIfStatement => innerInfluence(List(s), Set.empty)
       case _ => Set.empty
     }
   }

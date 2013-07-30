@@ -59,9 +59,9 @@ object AbstractTester extends Tester {
     val program = new AbstractProgram(stmts)
     val program2 = new AbstractProgram(stmts2)
     test(program equals program2, "fixedPoint: AbstractProgram equals works")
-    val copy = AbstractState(program, stmts, Map(Pair(AbstractVariable("x"), p)), Map(Pair(AbstractVariable("x"), true)),
+    val copy = AbstractState(program, 0, Map(Pair(AbstractVariable("x"), p)), Map(Pair(AbstractVariable("x"), true)),
       Set.empty)
-    val paste = AbstractState(program2, stmts2, Map(Pair(AbstractVariable("x"), p)), Map(Pair(AbstractVariable("x"), true)),
+    val paste = AbstractState(program2, 0, Map(Pair(AbstractVariable("x"), p)), Map(Pair(AbstractVariable("x"), true)),
       Set.empty)
     val other = copy.next.head
     val value = 2
