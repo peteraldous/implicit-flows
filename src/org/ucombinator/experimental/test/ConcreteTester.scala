@@ -124,7 +124,6 @@ object ConcreteTester extends Tester {
     test(program.influence(0) equals Set.empty, "influence of assignment is empty")
     test(program.influence(5) equals Set.empty, "influence of goto is empty")
     test(program.influence(2) equals Set.empty, "influence of label is empty")
-    println(program.influence(3))
     test(program.influence(3) equals (4 to 7).toSet, "influence of conditional")
   }
 

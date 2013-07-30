@@ -138,7 +138,7 @@ class Program(s: List[Statement]) {
   // infinite looping
   def mustReach(s: Int, seen: Set[Int] = Set.empty): Set[Int] = {
     if (seen contains s) {
-      System.err.println("warning: loop. Termination leaks are possible.")
+//      System.err.println("warning: loop. Termination leaks are possible.")
       Set.empty
     } else {
       if (s == lastLineNumber) Set(s) else {
@@ -160,6 +160,9 @@ class Program(s: List[Statement]) {
         seenSources
       } else {
         val succs = successors(queue.head)
+        if (!((succs.filter((successor) => s == successor)).isEmpty)) {
+            System.err.println("warning: loop to sensitive conditional; termination leaks are possible")
+        }
         val nextStatements = succs filter ((successor) => !(seenSources contains successor) && successor != s && !(must_reach contains successor))
         innerInfluence(queue.tail ++ nextStatements, seenSources ++ nextStatements)
       }
