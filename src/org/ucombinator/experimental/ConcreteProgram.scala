@@ -135,43 +135,37 @@ class Program(s: List[Statement]) {
     innerPath(start, Set.empty)
   }
 
+  // infinite looping
   def mustReach(s: Int, seen: Set[Int] = Set.empty): Set[Int] = {
     if (seen contains s) {
       System.err.println("warning: loop. Termination leaks are possible.")
       Set.empty
     } else {
       if (s == lastLineNumber) Set(s) else {
+        val nextSeen = seen + s
         statementTable(s).head match {
-          case as: AssignmentStatement => mustReach(s + 1) + (s + 1)
-          case ls: LabelStatement => mustReach(s + 1) + (s + 1)
-          case GotoStatement(ln, l) => mustReach(lookup(l)) + lookup(l)
-          case IfStatement(ln, cond, l) => mustReach(s + 1) & mustReach(lookup(l))
+          case as: AssignmentStatement => mustReach(s + 1, nextSeen) + (s + 1)
+          case ls: LabelStatement => mustReach(s + 1, nextSeen) + (s + 1)
+          case GotoStatement(ln, l) => mustReach(lookup(l), nextSeen) + lookup(l)
+          case IfStatement(ln, cond, l) => mustReach(s + 1, nextSeen) & mustReach(lookup(l), nextSeen)
         }
       }
     }
   }
 
   def influence(s: Int): Set[Int] = {
-    def innerInfl(sources: Set[Int], allSourcesSeen: Set[Int], soFar: Set[Int]): Set[Int] = {
-      val (clearPaths, condPaths) = sources.partition((source) => firstCond(source) == lastLineNumber)
-      if (condPaths.isEmpty) {
-        val paths = clearPaths.map(path)
-        val commonStatements = paths.foldLeft((0 to lastLineNumber).toSet)((subset, path) => subset & path)
-        paths.foldLeft(soFar)((set, path) => set | path) -- commonStatements
+    val must_reach = mustReach(s)
+    def innerInfluence(queue: List[Int], seenSources: Set[Int]): Set[Int] = {
+      if (queue isEmpty) {
+        seenSources
       } else {
-        val unexploredCondPaths = condPaths -- soFar
-        /*
-        if (unexploredCondPaths != condPaths) {
-          println("Warning: found a loop. Termination leaks are possible.")
-        }
-        */
-        val nextSources = unexploredCondPaths.foldLeft(clearPaths)((accumulated, condPath) => accumulated | successors(firstCond(condPath)))
-        val statementsSeen = condPaths.map(path).foldLeft(soFar)((statements, thisPath) => statements | thisPath)
-        innerInfl(nextSources, statementsSeen)
+        val succs = successors(queue.head)
+        val nextStatements = succs filter ((successor) => !(seenSources contains successor) && successor != s && !(must_reach contains successor))
+        innerInfluence(queue.tail ++ nextStatements, seenSources ++ nextStatements)
       }
     }
     statementTable(s).head match {
-      case i: IfStatement => innerInfl(successors(s), Set.empty)
+      case i: IfStatement => innerInfluence(List(s), Set.empty)
       case _ => Set.empty
     }
   }
