@@ -30,18 +30,6 @@ class ConcreteProgram(s: List[Statement]) {
     case _ => throw new IllegalStateException("eval: Could not match expression: " + e)
   }
 
-  def firstCond(start: Int): Int = {
-    if (start == lastLineNumber) lastLineNumber else {
-      statementTable(start).head match {
-        case (_: LabelStatement) => firstCond(start + 1)
-        case (_: AssignmentStatement) => firstCond(start + 1)
-        case GotoStatement(tl, l) => firstCond(lookup(l))
-        case (s: IfStatement) => start
-        case _ => throw new IllegalStateException("firstCond: Could not match statements list: " + statements)
-      }
-    }
-  }
-
   def firstState: ConcreteState = {
     // I should probably make this configurable, but x has the value of 2 and is tainted
     ConcreteState(ConcreteProgram.this, 0, Map(Pair(Variable("x"), Value(2))), Map(Pair(Variable("x"), true)), Set.empty)

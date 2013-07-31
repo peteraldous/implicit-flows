@@ -88,18 +88,6 @@ class AbstractProgram(s: List[AbstractStatement]) {
     case _ => throw new IllegalStateException("eval: Could not match expression: " + e)
   }
 
-  def firstCond(start: Int): Int = {
-    if (start == lastLineNumber) lastLineNumber else {
-      statementTable(start).head match {
-        case (_: AbstractLabelStatement) => firstCond(start + 1)
-        case (_: AbstractAssignmentStatement) => firstCond(start + 1)
-        case AbstractGotoStatement(tl, l) => firstCond(lookup(l))
-        case (s: AbstractIfStatement) => start
-        case _ => throw new IllegalStateException("firstCond: Could not match statements list: " + statements)
-      }
-    }
-  }
-
   def firstState: AbstractState = {
     // I should probably make this configurable, but x has the value of 2 and is tainted
     AbstractState(this, 0, Map(Pair(AbstractVariable("x"), p)), Map(Pair(AbstractVariable("x"), true)), Set.empty)

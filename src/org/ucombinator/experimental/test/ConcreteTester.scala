@@ -11,7 +11,6 @@ object ConcreteTester extends Tester {
   override def tests: Unit = {
     simpleTaint
     arithmetic
-    firstCond
     descendants
     path
     implicitFlow
@@ -61,24 +60,6 @@ object ConcreteTester extends Tester {
     test(definedAndEqual(Variable("mult"), env, Value(24)), "arithmetic: multiplication")
     test(definedAndEqual(Variable("compeq"), env, Value(1)), "arithmetic: comparison (equal)")
     test(definedAndEqual(Variable("compneq"), env, Value(0)), "arithmetic: comparison (not equal)")
-  }
-
-  private def firstCond: Unit = {
-    val code = "(:= y x)(:= z 1)(label _begin)(if (= x 1) _f)(:= z (+ z 1))(goto _end)(label _f)(:= z 0)(label _end)(if (= z 1) _begin)(:= y 2)"
-    val program = new ConcreteProgram(ToyParser.applyStmts(code))
-
-    test(program.firstCond(0) == 3, "internals: firstCond(0) == 3")
-    test(program.firstCond(1) == 3, "internals: firstCond(1) == 3")
-    test(program.firstCond(2) == 3, "internals: firstCond(2) == 3")
-    test(program.firstCond(3) == 3, "internals: firstCond(3) == 3")
-    test(program.firstCond(4) == 9, "internals: firstCond(4) == 9")
-    test(program.firstCond(5) == 9, "internals: firstCond(5) == 9")
-    test(program.firstCond(6) == 9, "internals: firstCond(6) == 9")
-    test(program.firstCond(7) == 9, "internals: firstCond(7) == 9")
-    test(program.firstCond(8) == 9, "internals: firstCond(8) == 9")
-    test(program.firstCond(9) == 9, "internals: firstCond(9) == 9")
-    test(program.firstCond(10) == 11, "internals: firstCond(10) == 11")
-    test(program.firstCond(11) == 11, "internals: firstCond(11) == 11")
   }
 
   private def path: Unit = {
