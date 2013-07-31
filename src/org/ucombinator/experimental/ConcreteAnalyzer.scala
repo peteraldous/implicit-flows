@@ -29,7 +29,7 @@ object ConcreteAnalyzer extends App {
   }
 
   def setup(sourceCode: String): ConcreteState = {
-    new Program(ToyParser.applyStmts(sourceCode, 0)).firstState
+    new ConcreteProgram(ToyParser.applyStmts(sourceCode, 0)).firstState
   }
 
   def analyze(sourceCode: String): Result = {

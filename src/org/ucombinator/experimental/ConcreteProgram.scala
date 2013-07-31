@@ -1,6 +1,6 @@
 package org.ucombinator.experimental
 
-class Program(s: List[Statement]) {
+class ConcreteProgram(s: List[Statement]) {
 
   def tainted(e: Expression, t: Map[Variable, Boolean]): Boolean = e match {
     case Addition(lhs, rhs) => tainted(lhs, t) || tainted(rhs, t)
@@ -44,7 +44,7 @@ class Program(s: List[Statement]) {
 
   def firstState: ConcreteState = {
     // I should probably make this configurable, but x has the value of 2 and is tainted
-    ConcreteState(this, 0, Map(Pair(Variable("x"), Value(2))), Map(Pair(Variable("x"), true)), Set.empty)
+    ConcreteState(ConcreteProgram.this, 0, Map(Pair(Variable("x"), Value(2))), Map(Pair(Variable("x"), true)), Set.empty)
   }
 
   case class Statics(labelTable: Map[Label, Int], statementTable: Map[Int, List[Statement]], lastLineNumber: Int)
@@ -141,7 +141,7 @@ class Program(s: List[Statement]) {
   def influence(s: Int): Set[Int] = {
     val must_reach = mustReach(s)
     def innerInfluence(queue: List[Int], seenSources: Set[Int]): Set[Int] = {
-      if (queue isEmpty) {
+      if (queue.isEmpty) {
         seenSources
       } else {
         val succs = successors(queue.head)

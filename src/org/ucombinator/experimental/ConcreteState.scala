@@ -1,6 +1,6 @@
 package org.ucombinator.experimental
 
-case class ConcreteState(program: Program, statements: Int, env: Map[Variable, Value], taintedVars: Map[Variable, Boolean], contextTaint: Set[Int]) {
+case class ConcreteState(program: ConcreteProgram, statements: Int, env: Map[Variable, Value], taintedVars: Map[Variable, Boolean], contextTaint: Set[Int]) {
 
   override def toString = program.statementTable(statements).head.toString
 

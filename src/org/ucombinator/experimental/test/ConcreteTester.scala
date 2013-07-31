@@ -1,7 +1,7 @@
 package org.ucombinator.experimental.test
 
 import org.ucombinator.experimental.ConcreteState
-import org.ucombinator.experimental.Program
+import org.ucombinator.experimental.ConcreteProgram
 import org.ucombinator.experimental.ToyParser
 import org.ucombinator.experimental.Value
 import org.ucombinator.experimental.Variable
@@ -65,7 +65,7 @@ object ConcreteTester extends Tester {
 
   private def firstCond: Unit = {
     val code = "(:= y x)(:= z 1)(label _begin)(if (= x 1) _f)(:= z (+ z 1))(goto _end)(label _f)(:= z 0)(label _end)(if (= z 1) _begin)(:= y 2)"
-    val program = new Program(ToyParser.applyStmts(code))
+    val program = new ConcreteProgram(ToyParser.applyStmts(code))
 
     test(program.firstCond(0) == 3, "internals: firstCond(0) == 3")
     test(program.firstCond(1) == 3, "internals: firstCond(1) == 3")
@@ -83,7 +83,7 @@ object ConcreteTester extends Tester {
 
   private def path: Unit = {
     val code = "(:= y x)(:= z 1)(label _begin)(if (= x 1) _f)(:= z (+ z 1))(goto _end)(label _f)(:= z 0)(label _end)(if (= z 1) _begin)(:= y 2)"
-    val program = new Program(ToyParser.applyStmts(code))
+    val program = new ConcreteProgram(ToyParser.applyStmts(code))
 
     test(program.path(0) == Set(0, 1, 2, 3), "path(0)")
     test(program.path(1) == Set(1, 2, 3), "path(1)")
@@ -101,7 +101,7 @@ object ConcreteTester extends Tester {
 
   private def descendants: Unit = {
     val code = "(:= y x)(:= z 1)(label _begin)(if (= x 1) _f)(:= z (+ z 1))(goto _end)(label _f)(:= z 0)(label _end)(if (= z 1) _begin)(:= y 2)"
-    val program = new Program(ToyParser.applyStmts(code))
+    val program = new ConcreteProgram(ToyParser.applyStmts(code))
 
     test(program.descendants(0) equals (1 to 11).toSet, "internals: descendants(0)")
     test(program.descendants(1) equals (2 to 11).toSet, "internals: descendants(1)")
@@ -119,7 +119,7 @@ object ConcreteTester extends Tester {
 
   private def influence: Unit = {
     val code = "(:= y x)(:= z 1)(label _begin)(if (= x 1) _f)(:= z (+ z 1))(goto _end)(label _f)(:= z 0)(label _end)(if (= z 1) _begin)(:= y 2)"
-    val program = new Program(ToyParser.applyStmts(code))
+    val program = new ConcreteProgram(ToyParser.applyStmts(code))
 
     test(program.influence(0) equals Set.empty, "influence of assignment is empty")
     test(program.influence(5) equals Set.empty, "influence of goto is empty")

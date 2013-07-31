@@ -214,7 +214,7 @@ class AbstractProgram(s: List[AbstractStatement]) {
   def influence(s: Int): Set[Int] = {
     val must_reach = mustReach(s)
     def innerInfluence(queue: List[Int], seenSources: Set[Int]): Set[Int] = {
-      if (queue isEmpty) {
+      if (queue.isEmpty) {
         seenSources
       } else {
         val succs = successors(queue.head)
@@ -234,4 +234,5 @@ class AbstractProgram(s: List[AbstractStatement]) {
 
 object AbstractProgramFactory {
   def empty: AbstractProgram = new AbstractProgram(List.empty)
+  def parse(code: String): AbstractProgram = new AbstractProgram(ToyParser.applyStmts(code) map { _.abstractMe })
 }
