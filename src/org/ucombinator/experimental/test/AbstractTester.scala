@@ -20,7 +20,6 @@ object AbstractTester extends Tester {
     arithmetic
     implicitFlow
     eval
-    path
     influence
     descendants
     fixedPoint
@@ -52,24 +51,6 @@ object AbstractTester extends Tester {
         test(testComparisonDefined(lhs, rhs), "eval coverage: (= " + lhs + " " + rhs + ")")
       }
     }
-  }
-
-  private def path: Unit = {
-    val code = "(:= y x)(:= z 1)(label _begin)(if (= x 1) _f)(:= z (+ z 1))(goto _end)(label _f)(:= z 0)(label _end)(if (= z 1) _begin)(:= y 2)"
-    val program = new AbstractProgram(ToyParser.applyStmts(code) map { _.abstractMe })
-
-    test(program.path(0) == Set(0, 1, 2, 3), "path(0)")
-    test(program.path(1) == Set(1, 2, 3), "path(1)")
-    test(program.path(2) == Set(2, 3), "path(2)")
-    test(program.path(3) == Set(3), "path(3)")
-    test(program.path(4) == Set(4, 5, 8, 9), "path(4)")
-    test(program.path(5) == Set(5, 8, 9), "path(5)")
-    test(program.path(6) == Set(6, 7, 8, 9), "path(6)")
-    test(program.path(7) == Set(7, 8, 9), "path(7)")
-    test(program.path(8) == Set(8, 9), "path(8)")
-    test(program.path(9) == Set(9), "path(9)")
-    test(program.path(10) == Set(10, 11), "path(10)")
-    test(program.path(11) == Set(11), "path(11)")
   }
 
   private def descendants: Unit = {

@@ -157,31 +157,6 @@ class AbstractProgram(s: List[AbstractStatement]) {
     innerDescendants(s, Set.empty)
   }
 
-  /**
-   * path: finds the path beginning at start and ending at the end of the program or at a conditional.
-   *
-   * The path is represented as a list of lists of Statement objects. Each list includes a Statement and all statements that
-   * succeed it in the order given in the source code. The lists each represent a Statement (and its successors in source code
-   * order) that would be executed if an interpreter began at start; that is, the result includes each Statement (bundled
-   * with its successors) in program order.
-   */
-  def path(start: Int): Set[Int] = {
-    def innerPath(start: Int, soFar: Set[Int]): Set[Int] = {
-      if (start == lastLineNumber) soFar + start else {
-        val statement = statementTable(start).head
-        val withStart = soFar + start
-        statement match {
-          case (s: AbstractLabelStatement) => innerPath(start + 1, withStart)
-          case AbstractGotoStatement(tl, l) => innerPath(lookup(l), withStart)
-          case (s: AbstractAssignmentStatement) => innerPath(start + 1, withStart)
-          case (s: AbstractIfStatement) => withStart
-          case _ => throw new IllegalStateException("path: unknown statement type")
-        }
-      }
-    }
-    innerPath(start, Set.empty)
-  }
-
   def mustReach(s: Int, seen: Set[Int] = Set.empty): Set[Int] = {
     if (seen contains s) {
       //      System.err.println("warning: loop. Termination leaks are possible.")
