@@ -2,14 +2,14 @@ package org.ucombinator.experimental
 
 case class AbstractState(program: AbstractProgram, statements: Int, env: Map[AbstractVariable, AbstractValue], taintedVars: Map[AbstractVariable, Boolean], contextTaint: Set[Int]) {
 
-  override def toString = program.statementTable(statements).head.toString
+  override def toString = program.statementTable(statements).toString
 
   def next: Set[AbstractState] = {
     if (isEnd) {
       scala.sys.error("next: should be unreachable")
     } else {
       val ctPrime = contextTaint.filter((source) => program.influence(source).contains(statements))
-      program.statementTable(statements).head match {
+      program.statementTable(statements) match {
         case AbstractLabelStatement(id, l) => Set(AbstractState(program, statements + 1, env, taintedVars, ctPrime))
         case AbstractGotoStatement(id, l) => Set(AbstractState(program, program.lookup(l), env, taintedVars, ctPrime))
 
@@ -34,7 +34,7 @@ case class AbstractState(program: AbstractProgram, statements: Int, env: Map[Abs
           sPrimes.foldLeft(stateSet.empty)((states, sPrime) => states + AbstractState(program, sPrime, env, taintedVars, ctPrimePrime))
         }
 
-        case _ => throw new IllegalStateException("next: unknown statement: " + program.statementTable(statements).head)
+        case _ => throw new IllegalStateException("next: unknown statement: " + program.statementTable(statements))
       }
     }
   }

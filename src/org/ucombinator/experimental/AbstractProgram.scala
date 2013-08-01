@@ -12,7 +12,7 @@ class AbstractProgram(s: List[AbstractStatement]) {
   }
 
   def successors(ln: Int): Set[Int] = {
-    if (ln == lastLineNumber) Set.empty else statementTable(ln).head match {
+    if (ln == lastLineNumber) Set.empty else statementTable(ln) match {
       case l: AbstractLabelStatement => Set(ln + 1)
       case a: AbstractAssignmentStatement => Set(ln + 1)
       case AbstractGotoStatement(ln, l) => Set(lookup(l))
@@ -93,7 +93,7 @@ class AbstractProgram(s: List[AbstractStatement]) {
     AbstractState(this, 0, Map(Pair(AbstractVariable("x"), p)), Map(Pair(AbstractVariable("x"), true)), Set.empty)
   }
 
-  case class Statics(labelTable: Map[Label, Int], statementTable: Map[Int, List[AbstractStatement]], lastLineNumber: Int)
+  case class Statics(labelTable: Map[Label, Int], statementTable: Map[Int, AbstractStatement], lastLineNumber: Int)
 
   val statements = s
   val statics = generateTables(statements)
@@ -118,17 +118,17 @@ class AbstractProgram(s: List[AbstractStatement]) {
   }
 
   private def generateTables(statements: List[AbstractStatement]): Statics = {
-    def innerGenerateTables(statements: List[AbstractStatement], labelTable: Map[Label, Int], statementTable: Map[Int, List[AbstractStatement]], ln: Int): Statics = {
+    def innerGenerateTables(statements: List[AbstractStatement], labelTable: Map[Label, Int], statementTable: Map[Int, AbstractStatement], ln: Int): Statics = {
       if (statements.isEmpty)
         Statics(labelTable, statementTable, ln)
       else {
         val statement = statements.head
         val next = statements.tail
         statement match {
-          case AbstractLabelStatement(ln, l) => innerGenerateTables(next, labelTable + Pair(l, ln), statementTable + Pair(ln, statements), ln + 1)
-          case AbstractIfStatement(ln, cond, l) => innerGenerateTables(next, labelTable, statementTable + Pair(ln, statements), ln + 1)
-          case AbstractGotoStatement(ln, l) => innerGenerateTables(next, labelTable, statementTable + Pair(ln, statements), ln + 1)
-          case AbstractAssignmentStatement(ln, v, e) => innerGenerateTables(next, labelTable, statementTable + Pair(ln, statements), ln + 1)
+          case AbstractLabelStatement(ln, l) => innerGenerateTables(next, labelTable + Pair(l, ln), statementTable + Pair(ln, statement), ln + 1)
+          case AbstractIfStatement(ln, cond, l) => innerGenerateTables(next, labelTable, statementTable + Pair(ln, statement), ln + 1)
+          case AbstractGotoStatement(ln, l) => innerGenerateTables(next, labelTable, statementTable + Pair(ln, statement), ln + 1)
+          case AbstractAssignmentStatement(ln, v, e) => innerGenerateTables(next, labelTable, statementTable + Pair(ln, statement), ln + 1)
           case _ => scala.sys.error("generateTables: unknown Statement type")
         }
       }
@@ -164,7 +164,7 @@ class AbstractProgram(s: List[AbstractStatement]) {
     } else {
       if (s == lastLineNumber) Set(s) else {
         val nextSeen = seen + s
-        statementTable(s).head match {
+        statementTable(s) match {
           case as: AbstractAssignmentStatement => mustReach(s + 1, nextSeen) + (s + 1)
           case ls: AbstractLabelStatement => mustReach(s + 1, nextSeen) + (s + 1)
           case AbstractGotoStatement(ln, l) => mustReach(lookup(l), nextSeen) + lookup(l)
@@ -188,7 +188,7 @@ class AbstractProgram(s: List[AbstractStatement]) {
         innerInfluence(queue.tail ++ nextStatements, seenSources ++ nextStatements)
       }
     }
-    statementTable(s).head match {
+    statementTable(s) match {
       case i: AbstractIfStatement => innerInfluence(List(s), Set.empty)
       case _ => Set.empty
     }

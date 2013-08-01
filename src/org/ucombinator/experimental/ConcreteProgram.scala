@@ -12,7 +12,7 @@ class ConcreteProgram(s: List[Statement]) {
   }
 
   def successors(ln: Int): Set[Int] = {
-    if (ln == lastLineNumber) Set.empty else statementTable(ln).head match {
+    if (ln == lastLineNumber) Set.empty else statementTable(ln) match {
       case l: LabelStatement => Set(ln + 1)
       case a: AssignmentStatement => Set(ln + 1)
       case GotoStatement(ln, l) => Set(lookup(l))
@@ -35,7 +35,7 @@ class ConcreteProgram(s: List[Statement]) {
     ConcreteState(ConcreteProgram.this, 0, Map(Pair(Variable("x"), Value(2))), Map(Pair(Variable("x"), true)), Set.empty)
   }
 
-  case class Statics(labelTable: Map[Label, Int], statementTable: Map[Int, List[Statement]], lastLineNumber: Int)
+  case class Statics(labelTable: Map[Label, Int], statementTable: Map[Int, Statement], lastLineNumber: Int)
 
   val statements = s
   val statics = generateTables(statements)
@@ -45,17 +45,17 @@ class ConcreteProgram(s: List[Statement]) {
   val allStatementLists = statementTable.values.toSet
 
   private def generateTables(statements: List[Statement]): Statics = {
-    def innerGenerateTables(statements: List[Statement], labelTable: Map[Label, Int], statementTable: Map[Int, List[Statement]], ln: Int): Statics = {
+    def innerGenerateTables(statements: List[Statement], labelTable: Map[Label, Int], statementTable: Map[Int, Statement], ln: Int): Statics = {
       if (statements.isEmpty)
         Statics(labelTable, statementTable, ln)
       else {
         val statement = statements.head
         val next = statements.tail
         statement match {
-          case LabelStatement(ln, l) => innerGenerateTables(next, labelTable + Pair(l, ln), statementTable + Pair(ln, statements), ln + 1)
-          case IfStatement(ln, cond, l) => innerGenerateTables(next, labelTable, statementTable + Pair(ln, statements), ln + 1)
-          case GotoStatement(ln, l) => innerGenerateTables(next, labelTable, statementTable + Pair(ln, statements), ln + 1)
-          case AssignmentStatement(ln, v, e) => innerGenerateTables(next, labelTable, statementTable + Pair(ln, statements), ln + 1)
+          case LabelStatement(ln, l) => innerGenerateTables(next, labelTable + Pair(l, ln), statementTable + Pair(ln, statement), ln + 1)
+          case IfStatement(ln, cond, l) => innerGenerateTables(next, labelTable, statementTable + Pair(ln, statement), ln + 1)
+          case GotoStatement(ln, l) => innerGenerateTables(next, labelTable, statementTable + Pair(ln, statement), ln + 1)
+          case AssignmentStatement(ln, v, e) => innerGenerateTables(next, labelTable, statementTable + Pair(ln, statement), ln + 1)
           case _ => scala.sys.error("generateTables: unknown Statement type")
         }
       }
@@ -91,7 +91,7 @@ class ConcreteProgram(s: List[Statement]) {
     } else {
       if (s == lastLineNumber) Set(s) else {
         val nextSeen = seen + s
-        statementTable(s).head match {
+        statementTable(s) match {
           case as: AssignmentStatement => mustReach(s + 1, nextSeen) + (s + 1)
           case ls: LabelStatement => mustReach(s + 1, nextSeen) + (s + 1)
           case GotoStatement(ln, l) => mustReach(lookup(l), nextSeen) + lookup(l)
@@ -115,7 +115,7 @@ class ConcreteProgram(s: List[Statement]) {
         innerInfluence(queue.tail ++ nextStatements, seenSources ++ nextStatements)
       }
     }
-    statementTable(s).head match {
+    statementTable(s) match {
       case i: IfStatement => innerInfluence(List(s), Set.empty)
       case _ => Set.empty
     }
