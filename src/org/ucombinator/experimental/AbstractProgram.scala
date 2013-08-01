@@ -162,7 +162,7 @@ class AbstractProgram(s: List[AbstractStatement]) {
       //      System.err.println("warning: loop. Termination leaks are possible.")
       Set.empty
     } else {
-      if (s == lastLineNumber) Set(s) else {
+      if (s == lastLineNumber) Set.empty else {
         val nextSeen = seen + s
         statementTable(s) match {
           case as: AbstractAssignmentStatement => mustReach(s + 1, nextSeen) + (s + 1)

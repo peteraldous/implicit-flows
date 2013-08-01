@@ -89,7 +89,7 @@ class ConcreteProgram(s: List[Statement]) {
       //      System.err.println("warning: loop. Termination leaks are possible.")
       Set.empty
     } else {
-      if (s == lastLineNumber) Set(s) else {
+      if (s == lastLineNumber) Set.empty else {
         val nextSeen = seen + s
         statementTable(s) match {
           case as: AssignmentStatement => mustReach(s + 1, nextSeen) + (s + 1)

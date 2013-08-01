@@ -20,6 +20,7 @@ object AbstractTester extends Tester {
     arithmetic
     implicitFlow
     eval
+    mustReach
     influence
     descendants
     fixedPoint
@@ -79,6 +80,24 @@ object AbstractTester extends Tester {
     test(program.influence(5) equals Set.empty, "influence of goto is empty")
     test(program.influence(2) equals Set.empty, "influence of label is empty")
     test(program.influence(3) equals (4 to 7).toSet, "influence of conditional")
+  }
+  
+  private def mustReach: Unit = {
+    val code = "(:= y x)(:= z 1)(label _begin)(if (= x 1) _f)(:= z (+ z 1))(goto _end)(label _f)(:= z 0)(label _end)(if (= z 1) _begin)(:= y 2)"
+    val program = new AbstractProgram(ToyParser.applyStmts(code) map { _.abstractMe })
+    
+    test(program.mustReach(0) equals Set(1,2,3,8,9), "mustReach(0)")
+    test(program.mustReach(1) equals Set(2,3,8,9), "mustReach(1)")
+    test(program.mustReach(2) equals Set(3,8,9), "mustReach(2)")
+    test(program.mustReach(3) equals Set(8,9), "mustReach(3)")
+    test(program.mustReach(4) equals Set(5,8,9), "mustReach(4)")
+    test(program.mustReach(5) equals Set(8,9), "mustReach(5)")
+    test(program.mustReach(6) equals Set(7,8,9), "mustReach(6)")
+    test(program.mustReach(7) equals Set(8,9), "mustReach(7)")
+    test(program.mustReach(8) equals Set(9), "mustReach(8)")
+    test(program.mustReach(9) equals Set.empty, "mustReach(9)")
+    test(program.mustReach(10) equals Set(11), "mustReach(10)")
+    test(program.mustReach(11) equals Set.empty, "mustReach(11)")
   }
 
   private def fixedPoint: Unit = {
