@@ -63,27 +63,7 @@ class ConcreteProgram(s: List[Statement]) {
     innerGenerateTables(statements, Map.empty, Map.empty, 0)
   }
 
-  def descendants(s: Int): Set[Int] = {
-    def innerDescendants(s: Int, seen: Set[Int]): Set[Int] = {
-      def ifNotSeen(s: Int, seen: Set[Int]): Set[Int] = {
-        if (seen contains s) {
-          Set.empty
-        } else {
-          innerDescendants(s, seen) + s
-        }
-      }
-      if (s == lastLineNumber) Set.empty else {
-        val succs = successors(s)
-        if (succs.size == 1) {
-          ifNotSeen(succs.head, seen + s)
-        } else {
-          ifNotSeen(succs.head, seen + s) | ifNotSeen(succs.tail.head, seen + s)
-        }
-      }
-    }
-    innerDescendants(s, Set.empty)
-  }
-
+  // TODO: memoize
   def mustReach(s: Int, seen: Set[Int] = Set.empty): Set[Int] = {
     if (seen contains s) {
       //      System.err.println("warning: loop. Termination leaks are possible.")
@@ -98,26 +78,6 @@ class ConcreteProgram(s: List[Statement]) {
           case IfStatement(ln, cond, l) => mustReach(s + 1, nextSeen) & mustReach(lookup(l), nextSeen)
         }
       }
-    }
-  }
-
-  def influence(s: Int): Set[Int] = {
-    val must_reach = mustReach(s)
-    def innerInfluence(queue: List[Int], seenSources: Set[Int]): Set[Int] = {
-      if (queue.isEmpty) {
-        seenSources
-      } else {
-        val succs = successors(queue.head)
-        if (!((succs.filter((successor) => s == successor)).isEmpty)) {
-          System.err.println("warning: loop to sensitive conditional; termination leaks are possible")
-        }
-        val nextStatements = succs filter ((successor) => !(seenSources contains successor) && successor != s && !(must_reach contains successor))
-        innerInfluence(queue.tail ++ nextStatements, seenSources ++ nextStatements)
-      }
-    }
-    statementTable(s) match {
-      case i: IfStatement => innerInfluence(List(s), Set.empty)
-      case _ => Set.empty
     }
   }
 }

@@ -8,7 +8,7 @@ case class ConcreteState(program: ConcreteProgram, statement: Int, env: Map[Vari
     if (isEnd) {
       scala.sys.error("next: should be unreachable")
     } else {
-      val ctPrime = contextTaint.filter((source) => program.influence(source).contains(statement))
+      val ctPrime = contextTaint.filter((source) => !program.mustReach(source).contains(statement))
       program.statementTable(statement) match {
         case LabelStatement(id, l) => ConcreteState(program, statement+1, env, taintedVars, ctPrime)
         case GotoStatement(id, l) => ConcreteState(program, program.lookup(l), env, taintedVars, ctPrime)

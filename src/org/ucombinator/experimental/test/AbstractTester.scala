@@ -21,8 +21,6 @@ object AbstractTester extends Tester {
     implicitFlow
     eval
     mustReach
-    influence
-    descendants
     fixedPoint
     loop
     infiniteLoop
@@ -52,34 +50,6 @@ object AbstractTester extends Tester {
         test(testComparisonDefined(lhs, rhs), "eval coverage: (= " + lhs + " " + rhs + ")")
       }
     }
-  }
-
-  private def descendants: Unit = {
-    val code = "(:= y x)(:= z 1)(label _begin)(if (= x 1) _f)(:= z (+ z 1))(goto _end)(label _f)(:= z 0)(label _end)(if (= z 1) _begin)(:= y 2)"
-    val program = new AbstractProgram(ToyParser.applyStmts(code) map { _.abstractMe })
-
-    test(program.descendants(0) equals (1 to 11).toSet, "internals: descendants(0)")
-    test(program.descendants(1) equals (2 to 11).toSet, "internals: descendants(1)")
-    test(program.descendants(2) equals (3 to 11).toSet, "internals: descendants(2)")
-    test(program.descendants(3) equals (2 to 11).toSet - 3, "internals: descendants(3)")
-    test(program.descendants(4) equals (2 to 11).toSet - 4, "internals: descendants(4)")
-    test(program.descendants(5) equals (2 to 11).toSet - 5, "internals: descendants(5)")
-    test(program.descendants(6) equals (2 to 11).toSet - 6, "internals: descendants(6)")
-    test(program.descendants(7) equals (2 to 11).toSet - 7, "internals: descendants(7)")
-    test(program.descendants(8) equals (2 to 11).toSet - 8, "internals: descendants(8)")
-    test(program.descendants(9) equals (2 to 11).toSet - 9, "internals: descendants(9)")
-    test(program.descendants(10) equals Set(11), "internals: descendants(10)")
-    test(program.descendants(11) equals Set.empty, "internals: descendants(11)")
-  }
-
-  private def influence: Unit = {
-    val code = "(:= y x)(:= z 1)(label _begin)(if (= x 1) _f)(:= z (+ z 1))(goto _end)(label _f)(:= z 0)(label _end)(if (= z 1) _begin)(:= y 2)"
-    val program = new AbstractProgram(ToyParser.applyStmts(code) map { _.abstractMe })
-
-    test(program.influence(0) equals Set.empty, "influence of assignment is empty")
-    test(program.influence(5) equals Set.empty, "influence of goto is empty")
-    test(program.influence(2) equals Set.empty, "influence of label is empty")
-    test(program.influence(3) equals (4 to 7).toSet, "influence of conditional")
   }
   
   private def mustReach: Unit = {

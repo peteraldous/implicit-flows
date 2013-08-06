@@ -8,7 +8,7 @@ case class AbstractState(program: AbstractProgram, statements: Int, env: Map[Abs
     if (isEnd) {
       scala.sys.error("next: should be unreachable")
     } else {
-      val ctPrime = contextTaint.filter((source) => program.influence(source).contains(statements))
+      val ctPrime = contextTaint.filter((source) => !program.mustReach(source).contains(statements))
       program.statementTable(statements) match {
         case AbstractLabelStatement(id, l) => Set(AbstractState(program, statements + 1, env, taintedVars, ctPrime))
         case AbstractGotoStatement(id, l) => Set(AbstractState(program, program.lookup(l), env, taintedVars, ctPrime))
