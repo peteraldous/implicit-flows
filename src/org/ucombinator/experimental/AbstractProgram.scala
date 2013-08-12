@@ -2,12 +2,12 @@ package org.ucombinator.experimental
 
 class AbstractProgram(s: List[AbstractStatement]) {
 
-  def tainted(e: AbstractExpression, t: Map[AbstractVariable, Boolean]): Boolean = e match {
+  def tainted(e: AbstractExpression, t: Set[AbstractVariable]): Boolean = e match {
     case AbstractAddition(lhs, rhs) => tainted(lhs, t) || tainted(rhs, t)
     case AbstractMultiplication(lhs, rhs) => tainted(lhs, t) || tainted(rhs, t)
     case AbstractComparison(lhs, rhs) => tainted(lhs, t) || tainted(rhs, t)
     case v: AbstractValue => false
-    case v: AbstractVariable => t(v)
+    case v: AbstractVariable => t contains v
     case _ => throw new IllegalStateException("tainted: unknown expression: " + e)
   }
 
@@ -90,7 +90,7 @@ class AbstractProgram(s: List[AbstractStatement]) {
 
   def firstState: AbstractState = {
     // I should probably make this configurable, but x has the value of 2 and is tainted
-    AbstractState(this, 0, Map(Pair(AbstractVariable("x"), p)), Map(Pair(AbstractVariable("x"), true)), Set.empty)
+    AbstractState(this, 0, Map(Pair(AbstractVariable("x"), p)), Set(AbstractVariable("x")), Set.empty)
   }
 
   case class Statics(labelTable: Map[Label, Int], statementTable: Map[Int, AbstractStatement], lastLineNumber: Int)

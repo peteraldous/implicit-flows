@@ -1,5 +1,7 @@
 package org.ucombinator.experimental
 
+// TODO: make Expressions and Values and so on implement an interface for extensibility to the value system
+
 case class Label(l: String)
 
 abstract class Expression {

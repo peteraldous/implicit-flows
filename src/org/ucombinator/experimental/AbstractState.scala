@@ -1,6 +1,6 @@
 package org.ucombinator.experimental
 
-case class AbstractState(program: AbstractProgram, statements: Int, env: Map[AbstractVariable, AbstractValue], taintedVars: Map[AbstractVariable, Boolean], contextTaint: Set[Int]) {
+case class AbstractState(program: AbstractProgram, statements: Int, env: Map[AbstractVariable, AbstractValue], taintedVars: Set[AbstractVariable], contextTaint: Set[Int]) {
 
   override def toString = program.statementTable(statements).toString
 
@@ -15,7 +15,7 @@ case class AbstractState(program: AbstractProgram, statements: Int, env: Map[Abs
 
         case AbstractAssignmentStatement(id, v, e) => {
           val envPrime = env + Pair(v, program.eval(e, env))
-          val tPrime = taintedVars + Pair(v, program.tainted(e, taintedVars) || !(contextTaint.isEmpty))
+          val tPrime = if (program.tainted(e, taintedVars) || !(contextTaint.isEmpty)) taintedVars + v else taintedVars - v
           Set(AbstractState(program, statements + 1, envPrime, tPrime, ctPrime))
         }
 

@@ -16,14 +16,6 @@ object ConcreteTester extends Tester {
     loop
   }
 
-  private def undefOrEqual[A, B](key: A, map: Map[A, B], value: B): Boolean = {
-    if (map isDefinedAt key) {
-      map(key) == value
-    } else {
-      true
-    }
-  }
-
   private def definedAndEqual[A, B](key: A, map: Map[A, B], value: B): Boolean = {
     if (map isDefinedAt key) {
       map(key) == value
@@ -39,10 +31,10 @@ object ConcreteTester extends Tester {
     val taintedVars = finalState.taintedVars
 
     test(finalState.contextTaint.isEmpty, "simpleTaint: no context taint")
-    test(definedAndEqual(Variable("x"), taintedVars, true), "simpleTaint: x is tainted")
-    test(definedAndEqual(Variable("y"), taintedVars, true), "simpleTaint: y is tainted")
-    test(undefOrEqual(Variable("z"), taintedVars, false), "simpleTaint: non-tainted variable is not tainted")
-    test(undefOrEqual(Variable("a"), taintedVars, false), "simpleTaint: non-existent variable is not tainted")
+    test(taintedVars contains Variable("x"), "simpleTaint: x is tainted")
+    test(taintedVars contains Variable("y"), "simpleTaint: y is tainted")
+    test(!(taintedVars contains Variable("z")), "simpleTaint: non-tainted variable is not tainted")
+    test(!(taintedVars contains Variable("a")), "simpleTaint: non-existent variable is not tainted")
     test(finalState.env(Variable("x")) == finalState.env(Variable("y")), "simpleTaint: x == y")
     test(finalState.program.lastLineNumber == 2, "simpleTaint: line count is correct")
   }
@@ -86,9 +78,9 @@ object ConcreteTester extends Tester {
     val taintedVars = finalState.taintedVars
 
     test(finalState.contextTaint.isEmpty, "implicitFlow: no context taint")
-    test(definedAndEqual(Variable("x"), taintedVars, true), "implicitFlow: x is tainted")
-    test(definedAndEqual(Variable("y"), taintedVars, false), "implicitFlow: y is not tainted (strong update)")
-    test(definedAndEqual(Variable("z"), taintedVars, true), "implicitFlow: z is tainted (implicit flow)")
+    test(taintedVars contains Variable("x"), "implicitFlow: x is tainted")
+    test(!(taintedVars contains Variable("y")), "implicitFlow: y is not tainted (strong update)")
+    test(taintedVars contains Variable("z"), "implicitFlow: z is tainted (implicit flow)")
   }
 
   private def loop: Unit = {
@@ -99,7 +91,7 @@ object ConcreteTester extends Tester {
     val taintedVars = finalState.taintedVars
 
     test(finalState.contextTaint.isEmpty, "implicitFlow: no context taint")
-    test(definedAndEqual(Variable("x"), taintedVars, true), "simpleTaint: x is tainted")
-    test(definedAndEqual(Variable("y"), taintedVars, false), "simpleTaint: y is not tainted")
+    test(taintedVars contains Variable("x"), "simpleTaint: x is tainted")
+    test(!(taintedVars contains Variable("y")), "simpleTaint: y is not tainted")
   }
 }

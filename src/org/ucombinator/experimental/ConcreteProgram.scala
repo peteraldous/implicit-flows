@@ -2,12 +2,12 @@ package org.ucombinator.experimental
 
 class ConcreteProgram(s: List[Statement]) {
 
-  def tainted(e: Expression, t: Map[Variable, Boolean]): Boolean = e match {
+  def tainted(e: Expression, t: Set[Variable]): Boolean = e match {
     case Addition(lhs, rhs) => tainted(lhs, t) || tainted(rhs, t)
     case Multiplication(lhs, rhs) => tainted(lhs, t) || tainted(rhs, t)
     case Comparison(lhs, rhs) => tainted(lhs, t) || tainted(rhs, t)
     case v: Value => false
-    case v: Variable => t(v)
+    case v: Variable => t contains v
     case _ => throw new IllegalStateException("tainted: unknown expression: " + e)
   }
 
@@ -32,7 +32,7 @@ class ConcreteProgram(s: List[Statement]) {
 
   def firstState: ConcreteState = {
     // I should probably make this configurable, but x has the value of 2 and is tainted
-    ConcreteState(ConcreteProgram.this, 0, Map(Pair(Variable("x"), Value(2))), Map(Pair(Variable("x"), true)), Set.empty)
+    ConcreteState(ConcreteProgram.this, 0, Map(Pair(Variable("x"), Value(2))), Set(Variable("x")), Set.empty)
   }
 
   case class Statics(labelTable: Map[Label, Int], statementTable: Map[Int, Statement], lastLineNumber: Int)

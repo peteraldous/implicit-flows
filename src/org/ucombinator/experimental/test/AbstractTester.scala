@@ -26,14 +26,6 @@ object AbstractTester extends Tester {
     infiniteLoop
   }
 
-  private def undefOrFalse[A](key: A, map: Map[A, Boolean]): Boolean = {
-    if (map isDefinedAt key) {
-      !map(key)
-    } else {
-      true
-    }
-  }
-
   private def testDefined(fun: (AbstractValue, AbstractValue) => AbstractValue)(lhs: AbstractValue, rhs: AbstractValue): Boolean = {
     Try(fun(lhs, rhs)).isSuccess
   }
@@ -51,19 +43,19 @@ object AbstractTester extends Tester {
       }
     }
   }
-  
+
   private def mustReach: Unit = {
     val code = "(:= y x)(:= z 1)(label _begin)(if (= x 1) _f)(:= z (+ z 1))(goto _end)(label _f)(:= z 0)(label _end)(if (= z 1) _begin)(:= y 2)"
     val program = new AbstractProgram(ToyParser.applyStmts(code) map { _.abstractMe })
-    
-    test(program.mustReach(0) equals Set(1,2,3,8,9), "mustReach(0)")
-    test(program.mustReach(1) equals Set(2,3,8,9), "mustReach(1)")
-    test(program.mustReach(2) equals Set(3,8,9), "mustReach(2)")
-    test(program.mustReach(3) equals Set(8,9), "mustReach(3)")
-    test(program.mustReach(4) equals Set(5,8,9), "mustReach(4)")
-    test(program.mustReach(5) equals Set(8,9), "mustReach(5)")
-    test(program.mustReach(6) equals Set(7,8,9), "mustReach(6)")
-    test(program.mustReach(7) equals Set(8,9), "mustReach(7)")
+
+    test(program.mustReach(0) equals Set(1, 2, 3, 8, 9), "mustReach(0)")
+    test(program.mustReach(1) equals Set(2, 3, 8, 9), "mustReach(1)")
+    test(program.mustReach(2) equals Set(3, 8, 9), "mustReach(2)")
+    test(program.mustReach(3) equals Set(8, 9), "mustReach(3)")
+    test(program.mustReach(4) equals Set(5, 8, 9), "mustReach(4)")
+    test(program.mustReach(5) equals Set(8, 9), "mustReach(5)")
+    test(program.mustReach(6) equals Set(7, 8, 9), "mustReach(6)")
+    test(program.mustReach(7) equals Set(8, 9), "mustReach(7)")
     test(program.mustReach(8) equals Set(9), "mustReach(8)")
     test(program.mustReach(9) equals Set.empty, "mustReach(9)")
     test(program.mustReach(10) equals Set(11), "mustReach(10)")
@@ -78,9 +70,9 @@ object AbstractTester extends Tester {
     val program = new AbstractProgram(stmts)
     val program2 = new AbstractProgram(stmts2)
     test(program equals program2, "fixedPoint: AbstractProgram equals works")
-    val copy = AbstractState(program, 0, Map(Pair(AbstractVariable("x"), p)), Map(Pair(AbstractVariable("x"), true)),
+    val copy = AbstractState(program, 0, Map(Pair(AbstractVariable("x"), p)), Set(AbstractVariable("x")),
       Set.empty)
-    val paste = AbstractState(program2, 0, Map(Pair(AbstractVariable("x"), p)), Map(Pair(AbstractVariable("x"), true)),
+    val paste = AbstractState(program2, 0, Map(Pair(AbstractVariable("x"), p)), Set(AbstractVariable("x")),
       Set.empty)
     val other = copy.next.head
     val value = 2
@@ -107,10 +99,10 @@ object AbstractTester extends Tester {
       val taintedVars = finalState.taintedVars
 
       test(finalState.contextTaint.isEmpty, "simpleTaint: no context taint")
-      test(taintedVars(AbstractVariable("x")), "simpleTaint: x is tainted")
-      test(taintedVars(AbstractVariable("y")), "simpleTaint: y is tainted")
-      test(undefOrFalse(AbstractVariable("z"), taintedVars), "simpleTaint: non-tainted variable is not tainted")
-      test(undefOrFalse(AbstractVariable("a"), taintedVars), "simpleTaint: non-existent variable is not tainted")
+      test(taintedVars contains AbstractVariable("x"), "simpleTaint: x is tainted")
+      test(taintedVars contains AbstractVariable("y"), "simpleTaint: y is tainted")
+      test(!(taintedVars contains AbstractVariable("z")), "simpleTaint: non-tainted variable is not tainted")
+      test(!(taintedVars contains AbstractVariable("a")), "simpleTaint: non-existent variable is not tainted")
       test(finalState.env(AbstractVariable("x")) == finalState.env(AbstractVariable("y")), "simpleTaint: x == y")
     }
   }
@@ -152,8 +144,8 @@ object AbstractTester extends Tester {
       val taintedVars = finalState.taintedVars
 
       test(finalState.contextTaint.isEmpty, "implicitFlow: no context taint")
-      test(taintedVars.getOrElse(AbstractVariable("x"), false), "simpleTaint: x is tainted")
-      test(!taintedVars.getOrElse(AbstractVariable("y"), true), "simpleTaint: y is not tainted")
+      test(taintedVars contains AbstractVariable("x"), "simpleTaint: x is tainted")
+      test(!(taintedVars contains AbstractVariable("y")), "simpleTaint: y is not tainted")
     }
   }
 
