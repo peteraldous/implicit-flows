@@ -90,7 +90,7 @@ class AbstractProgram(s: List[AbstractStatement]) {
 
   def firstState: AbstractState = {
     // I should probably make this configurable, but x has the value of 2 and is tainted
-    AbstractState(this, 0, Map(Pair(AbstractVariable("x"), p)), Set(AbstractVariable("x")), Set.empty)
+    AbstractState(this, 0, Map(Pair(AbstractVariable("x"), nzp)), Set(AbstractVariable("x")), Set.empty)
   }
 
   case class Statics(labelTable: Map[Label, Int], statementTable: Map[Int, AbstractStatement], lastLineNumber: Int)
