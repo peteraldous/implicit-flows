@@ -50,8 +50,8 @@ class AbstractProgram(s: List[AbstractStatement]) {
       case (_, `z`) => z // 6 cases  - 13 total
       case (`p`, s) => s // 6 cases  - 19 total
       case (s, `p`) => s // 5 cases  - 24 total
-      case (`nzp`, s) => nzp // 5 cases  - 29 total
-      case (s, `nzp`) => nzp // 4 cases  - 33 total
+      case (`nzp`, _) => nzp // 5 cases  - 29 total
+      case (_, `nzp`) => nzp // 4 cases  - 33 total
       case (`n`, `n`) => p // 34 total
       case (`n`, `nz`) => zp // 35 total
       case (`nz`, `n`) => zp // 36 total
