@@ -13,13 +13,16 @@ import org.ucombinator.experimental.zp
 import org.ucombinator.experimental.ToyParser
 import scala.util.Failure
 import scala.util.Success
+import org.ucombinator.experimental.np
+import org.ucombinator.experimental.nzp
 
 object AbstractTester extends Tester {
   override def tests: Unit = {
     simpleTaint
+    arithmeticCoverage
     arithmetic
+    moreArithmetic
     implicitFlow
-    eval
     mustReach
     fixedPoint
     loop
@@ -30,7 +33,7 @@ object AbstractTester extends Tester {
     Try(fun(lhs, rhs)).isSuccess
   }
 
-  private def eval: Unit = {
+  private def arithmeticCoverage: Unit = {
     val program = new AbstractProgram(List.empty)
     val testAdditionDefined = testDefined(program.abstractAdd)_
     val testMultiplicationDefined = testDefined(program.abstractMultiply)_
@@ -120,6 +123,11 @@ object AbstractTester extends Tester {
       test(env.isDefinedAt(AbstractVariable("compneq")) && env(AbstractVariable("compneq")) == zp, "arithmetic: comparison (not equal but can't determine)")
       test(env.isDefinedAt(AbstractVariable("compz")) && env(AbstractVariable("compz")) == z, "arithmetic: comparison (not equal)")
     }
+  }
+
+  private def moreArithmetic: Unit = {
+    val program = new AbstractProgram(List.empty)
+    test(program.abstractAdd(np, np) == nzp, "moreArithmetic: np+np")
   }
 
   private def implicitFlow: Unit = {

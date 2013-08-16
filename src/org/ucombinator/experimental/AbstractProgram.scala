@@ -26,15 +26,17 @@ class AbstractProgram(s: List[AbstractStatement]) {
       // nzp is top
       case (`nzp`, _) => nzp // 7 cases - 7 total
       case (_, `nzp`) => nzp // 6 cases - 13 total
-      // if they match (assuming no overflow), the sign remains the same
-      case (copy, paste) if (copy == paste) => copy // 6 cases - 19 total
       // zero doesn't change the case
-      case (`z`, s) => s // 5 cases - 24 total
-      case (s, `z`) => s // 5 cases - 29 total
-      // this catches all cases that have n in one and p in the other
+      case (`z`, s) => s // 5 cases - 19 total
+      case (s, `z`) => s // 5 cases - 24 total
+      // With n on one side and p in the other, anything is possible
       case (lhs, rhs) if ((AbstractValues.positive.contains(rhs) && AbstractValues.negative.contains(lhs)) ||
         (AbstractValues.negative.contains(rhs) && AbstractValues.positive.contains(lhs))) => nzp
-      // 16 cases - 45 total
+      // 17 cases - 41 total
+      case (`p`, `p`) => p
+      case (`n`, `n`) => n
+      case (`zp`, `zp`) => zp
+      case (`nz`, `nz`) => nz
       case (`nz`, `n`) => n // 46 total
       case (`n`, `nz`) => n // 47 total
       case (`zp`, `p`) => p // 48 total
