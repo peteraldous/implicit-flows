@@ -23,7 +23,7 @@ class AbstractProgram(s: List[AbstractStatement]) {
 
   def abstractAdd(lhs: AbstractValue, rhs: AbstractValue): AbstractValue = {
     (lhs, rhs) match {
-      // nzp is top
+      // nzp is bottom
       case (`nzp`, _) => nzp // 7 cases - 7 total
       case (_, `nzp`) => nzp // 6 cases - 13 total
       // zero doesn't change the case
