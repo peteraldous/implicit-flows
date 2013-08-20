@@ -1,3 +1,22 @@
+/*
+    Implicit Flows: a prototype taint tracking system for implicit flows
+    Copyright (C) 2013   Petey Aldous <petey.aldous@utah.edu>
+
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+*/
+
 package org.ucombinator.experimental.test
 
 import org.ucombinator.experimental.ConcreteState
@@ -51,19 +70,19 @@ object ConcreteTester extends Tester {
     test(definedAndEqual(Variable("compeq"), env, Value(1)), "arithmetic: comparison (equal)")
     test(definedAndEqual(Variable("compneq"), env, Value(0)), "arithmetic: comparison (not equal)")
   }
-  
+
   private def mustReach: Unit = {
     val code = "(:= y x)(:= z 1)(label _begin)(if (= x 1) _f)(:= z (+ z 1))(goto _end)(label _f)(:= z 0)(label _end)(if (= z 1) _begin)(:= y 2)"
     val program = new ConcreteProgram(ToyParser.applyStmts(code))
-    
-    test(program.mustReach(0) equals Set(1,2,3,8,9), "mustReach(0)")
-    test(program.mustReach(1) equals Set(2,3,8,9), "mustReach(1)")
-    test(program.mustReach(2) equals Set(3,8,9), "mustReach(2)")
-    test(program.mustReach(3) equals Set(8,9), "mustReach(3)")
-    test(program.mustReach(4) equals Set(5,8,9), "mustReach(4)")
-    test(program.mustReach(5) equals Set(8,9), "mustReach(5)")
-    test(program.mustReach(6) equals Set(7,8,9), "mustReach(6)")
-    test(program.mustReach(7) equals Set(8,9), "mustReach(7)")
+
+    test(program.mustReach(0) equals Set(1, 2, 3, 8, 9), "mustReach(0)")
+    test(program.mustReach(1) equals Set(2, 3, 8, 9), "mustReach(1)")
+    test(program.mustReach(2) equals Set(3, 8, 9), "mustReach(2)")
+    test(program.mustReach(3) equals Set(8, 9), "mustReach(3)")
+    test(program.mustReach(4) equals Set(5, 8, 9), "mustReach(4)")
+    test(program.mustReach(5) equals Set(8, 9), "mustReach(5)")
+    test(program.mustReach(6) equals Set(7, 8, 9), "mustReach(6)")
+    test(program.mustReach(7) equals Set(8, 9), "mustReach(7)")
     test(program.mustReach(8) equals Set(9), "mustReach(8)")
     test(program.mustReach(9) equals Set.empty, "mustReach(9)")
     test(program.mustReach(10) equals Set(11), "mustReach(10)")
