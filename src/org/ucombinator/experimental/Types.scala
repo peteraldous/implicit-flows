@@ -22,6 +22,16 @@ package org.ucombinator.experimental
 // TODO: make Expressions and Values and so on implement an interface for extensibility to the value system
 
 case class Label(l: String)
+case class FunctionName(name: String)
+case class Function(name: FunctionName, body: Label, parameters: Expression*)
+case class StackFrame(target: Int, locals: Map[Variable, Value])
+case class Address(a: Int)
+// states are (ln, env, store)
+// configurations are (state, stack summary)
+// do i need a separate store and env?
+// - yes - because shadowing is possible and i don't want to merge every variable with the same name
+// TODO create a function table (FQN -> Function object)
+// I may need to come up with an object system for this paper
 
 abstract class Expression {
   def abstractMe: AbstractExpression
@@ -90,6 +100,10 @@ case class IfStatement(ln: Int, condition: Expression, l: Label) extends Stateme
   override def abstractMe: AbstractIfStatement = AbstractIfStatement(ln, condition.abstractMe, l)
   override def toString: String = super.toString + "\"(If " + condition + l + ")\""
 }
+case class FunctionCall(ln: Int, fun: Variable, exps: Expression*) extends Statement(ln: Int) {
+  override def abstractMe: AbstractFunctionCall = AbstractFunctionCall(ln, fun, exps map { _.abstractMe }: _*)
+  override def toString: String = super.toString + "\"(" + fun + " " + exps + ")\""
+}
 
 abstract class AbstractStatement(ln: Int) {
   override def toString: String
@@ -105,4 +119,7 @@ case class AbstractGotoStatement(ln: Int, l: Label) extends AbstractStatement(ln
 }
 case class AbstractIfStatement(ln: Int, condition: AbstractExpression, l: Label) extends AbstractStatement(ln: Int) {
   override def toString: String = "\"(If " + condition + l + ")\""
+}
+case class AbstractFunctionCall(ln: Int, fun: Variable, exps: AbstractExpression*) extends AbstractStatement(ln: Int) {
+  override def toString: String = "\"(" + fun + " "+ exps + ")\""
 }

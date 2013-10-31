@@ -21,6 +21,8 @@ package org.ucombinator.experimental
 
 import scala.util.parsing.combinator._
 
+case class ParseError(msg: String) extends RuntimeException
+
 object ToyParser extends RegexParsers {
 
   def labelStatement(ln: Int): Parser[Statement] = "(label" ~> label <~ ")" ^^ { LabelStatement(ln, _) }
@@ -32,6 +34,10 @@ object ToyParser extends RegexParsers {
   def condStatement(ln: Int): Parser[Statement] = "(if" ~> expr ~ label <~ ")" map {
     case expression ~ label => IfStatement(ln, expression, label)
     case _ => scala.sys.error("could not match if statement")
+  }
+  def functionCall(ln: Int): Parser[Statement] = "(call" ~> variable ~ expr <~ ")" map {
+    case variable ~ expression => FunctionCall(ln, variable, expression)
+    case _ => throw new ParseError("Bad function call")
   }
 
   def label: Parser[Label] = "_[a-z]+".r ^^ { Label(_) }
